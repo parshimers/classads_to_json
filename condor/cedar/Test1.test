@@ -1,0 +1,30 @@
+import condor.cedar.CedarInputStream;
+import condor.cedar.CedarOutputStream;
+import java.io.*;
+
+class Test1 {
+    public static void pl(Object o) { System.err.println(o); }
+    public static void main(String[] args) throws Exception {
+        CedarOutputStream out = new CedarOutputStream(
+            new FileOutputStream("data"));
+        out.writeBoolean(true);
+        out.writeByte(2);
+        out.writeShort(3);
+        out.writeChar('\u1234');
+        out.writeInt(5);
+        out.writeLong(6);
+        out.writeFloat((float)7.123);
+        out.writeDouble((double)8.321);
+        out.close();
+        CedarInputStream in = new CedarInputStream(
+            new FileInputStream("data"));
+        pl(""+in.readBoolean());
+        pl(""+in.readByte());
+        pl(""+in.readShort());
+        pl(""+Integer.toHexString(in.readChar()));
+        pl(""+in.readInt());
+        pl(""+in.readLong());
+        pl(""+in.readFloat());
+        pl(""+in.readDouble());
+    }
+}

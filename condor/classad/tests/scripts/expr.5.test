@@ -1,0 +1,156 @@
+// Misc tests of ClassAds
+
+// Test of cylic definitions
+{[
+    value = foo==1;
+    foo = bar;
+    bar = foo;
+], [ ex2=1 ]};
+
+{[ value = foo==1; foo = OTHER.bar ], [ bar = OTHER.foo ]};
+
+[ value = a.b; a = [ b = value ] ];
+
+[ value = a.b[0]; a = [ b = { value } ] ];
+
+// Tests of tricky nesting
+[ a = [ b = (c ? d : e); d = f; f = 1 ]; e = f; f = 2; c = true ] . a . b;
+[ a = [ b = (c ? d : e); d = f; f = 1 ]; e = f; f = 2; c = false ] . a . b;
+[ a = [ b = [ c = d; d = 5 ] ] ] . a . b . c;
+[ a = { 3, x }; x = b.c; b = [ c = 3; ]; ] . a [1];
+[ a = [ b = [ c = { 3, d }; ]; d = { 4, e }; ]; e = 1; ].a.b.c[1][1];
+[ a = [ b = { c }; c = 1 ]; c = 2] . a . b [0];
+[ a = [ b = c; c = 1 ] . b ; c = 2 ] . a;
+[ a = [ b = c ] . b; c = 2 ] . a;
+[ x = 12 ; I = [ y = 13 ; z = x + y ] ].I.z;
+[ x=B.y ; A=[y=2; z=x+y] ; B=[y=1] ].A.z;
+[a = {c}; c = 1].a;
+[a = [ b = c; ]; c = 1].a;
+[a = [ b = c; ]; c = 1].a.b;
+[a = { [c = 1], [c = 2] }].a.c;
+[a = { b, c }; b = [d = 1]; c = [d = 2]].a.d;
+[a = [ b = { [c = d], [c = e] }; d = 1 ]; d = 2; e = 3 ] . a . b;
+[a = [ b = { [c = d], [c = e] }; d = 1 ]; d = 2; e = 3 ] . a . b . c[0];
+[a = [ b = { [c = d], [c = e] }; d = 1 ]; d = 2; e = 3 ] . a . b . c[1];
+{ [ a = [ b = c ]; c = 4 ] }[0].a.b;
+{ [ a = [ b = c ]; c = 4 ] }.a[0].b;
+[ a = { [ b = [ d = c ]; c = 5 ] }; c = 4 ].a[0].b.d;
+[ a = { [ b = [ d = c ]; c = 5 ] }; c = 4 ].a.b[0].d;
+{ [ a = [ b = c ]; c = 4 ], [ a = [ b = c ]; c = 5 ] }.a.b;
+
+// Tests of keyword "parent"
+[ value = x.a; a = 1; x = [ a = parent.a + 1]];
+[
+    value = x.y.z;
+    a = 1;
+    x = [ b = a; y = [ a = 2; z = parent.b; ] ]
+];
+[
+    value = x.y;
+    a = [b = 1];
+    b = 2;
+    x = [ y = parent.a.b; b = 3; a = [ b = 4 ] ]
+];
+[ value = parent.a; a = 1];
+
+// The "member" function
+
+[
+    value = member("b", { "a", "b", "c" });
+];
+[
+    value = member("B", { "a", "b", "c" });
+];
+[
+    value = member("x", { "a", "b", "c" });
+];
+[
+    a = 1;
+    b = 2;
+    c = 3;
+    value = member(b, { a, b, c });
+];
+[
+    a = 1;
+    b = 2;
+    c = 3;
+    value = member(b, { 1, 2, 3 });
+];
+[
+    value = member(2.00, { 1, 2, 3 });
+];
+[
+    value = member(2, { 1e0, 2e0, 3e0 });
+];
+[
+    value = member("a", [ a = 1; b = 2]);
+];
+[
+    value = member("a", { [ a = 1; b = 2 ], "a", {1,2,3}});
+];
+[
+    value = member(true, { "one", true, 3 });
+];
+[
+    value = member(false, { "one", true, 3 });
+];
+[
+    value = member({1,2,3}, { "one", true, 3 });
+];
+[
+    value = member(1, true);
+];
+[
+    value = member(1, [ a = 1; b = 2 ]);
+];
+
+// The "identicalMember" function
+
+[
+    value = identicalMember("b", { "a", "b", "c" });
+];
+[
+    value = identicalMember("B", { "a", "b", "c" });
+];
+[
+    value = identicalMember("x", { "a", "b", "c" });
+];
+[
+    a = 1;
+    b = 2;
+    c = 3;
+    value = identicalMember(b, { a, b, c });
+];
+[
+    a = 1;
+    b = 2;
+    c = 3;
+    value = identicalMember(b, { 1, 2, 3 });
+];
+[
+    value = identicalMember(2.00, { 1, 2, 3 });
+];
+[
+    value = identicalMember(2, { 1e0, 2e0, 3e0 });
+];
+[
+    value = identicalMember("a", [ a = 1; b = 2]);
+];
+[
+    value = identicalMember("a", { [ a = 1; b = 2 ], "a", {1,2,3}});
+];
+[
+    value = identicalMember(true, { "one", true, 3 });
+];
+[
+    value = identicalMember(false, { "one", true, 3 });
+];
+[
+    value = identicalMember({1,2,3}, { "one", true, 3 });
+];
+[
+    value = identicalMember(1, true);
+];
+[
+    value = identicalMember(1, [ a = 1; b = 2 ]);
+];

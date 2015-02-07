@@ -1,0 +1,3 @@
+select Name, Arch, Memory, Disk, Idle = timeInterval(ConsoleIdle)
+from ads_raw
+where ConsoleIdle > 100*24*60*60

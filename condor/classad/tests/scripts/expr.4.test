@@ -1,0 +1,113 @@
+// Various tests to verify the evaluation of expressions, part 4:
+//    Built-in functions for times and dates
+
+[ value = time(1) ];
+[ value = strcat("VARIABLE ", time()) ];
+
+[ value = interval() ];
+[ value = interval(1,2) ];
+[ value = interval(0) ];
+[ value = interval(59) ];
+[ value = interval(60) ];
+[ value = interval(3599) ];
+[ value = interval(3600) ];
+[ value = interval(24*60*60-1) ];
+[ value = interval(24*60*60) ];
+[ value = strcat("<",interval(2*60*60+3*60+4),">") ];
+[ value = strcat("<",interval(99*24*60*60),">") ];
+
+[ value = localTimeString() ];
+[ value = localTimeString(1,2) ];
+[ value = strcat("VARIABLE ", localTimeString(time())) ];
+[ value = localTimeString(0) ];
+[ value = localTimeString(859917600);
+	comment = "<Tue Apr  1 12:00:00 CST 1997> (US Central time zone)" ];
+
+[ value = gmtTimeString() ];
+[ value = gmtTimeString(1,2) ];
+[ value = strcat("VARIABLE ", gmtTimeString(time())) ];
+[ value = gmtTimeString(0) ];
+[ value = gmtTimeString(859896000);
+	comment = "<Tue Apr  1 12:00:00 UTC 1997>" ];
+[ value = splitTime(absTime("2003-04-01:12:34-06:00")) ];
+//[ value = splitTime(absTime()) ];
+[ value = splitTime(relTime("1+02:03:04.567")) ];
+
+[ value = formatTime(absTime(1101902400, -18000),
+    "%%a = '%a' %%A = '%A' %%b = '%b' %%B = '%B' "); ];
+[ value = formatTime(absTime(1101902400, -18000),
+    "%%c = '%c' %%d = '%d' %%h = '%H' %%i = '%I' "); ];
+[ value = formatTime(absTime(1101902400, -18000),
+    "%%j = '%j' %%m = '%m' %%M = '%M' %%p = '%p' %%S = '%S' %%w = '%w' "); ];
+[ value = formatTime(absTime(1101902400, -18000),
+    "%%s = '%x' %%X = '%X' %%y = '%y' %%Y = '%Y' %%Z = '%Z' "); ];
+
+// Examples from the reference manual
+
+[ comment = "int(absTime(\"2003-01-25T09:00:00-06:00\"))";
+  value = int(absTime("2003-01-25T09:00:00-06:00")) ];
+[ comment = "absTime(\"2003-01-25T09:00:00-06:00\")";
+  value = absTime("2003-01-25T09:00:00-06:00") ];
+[ comment = "absTime(\"2003-01-25   09:00:00 -0600\")";
+  value = absTime("2003-01-25   09:00:00 -0600") ];
+[ comment = "absTime(\"20030125090000-06:00\")";
+  value = absTime("20030125090000-06:00") ];
+[ comment = "absTime(\"2003-01-25 16:00:00 +0100\")";
+  value = absTime("2003-01-25 16:00:00 +0100") ];
+[ comment = "absTime(\"2003-01-25 15:00Z\")";
+  value = absTime("2003-01-25 15:00Z") ];
+[ comment = "absTime(\"2003-01-25 09:00:00\")";
+  value = absTime("2003-01-25 09:00:00") ];
+[ comment = "absTime(\"2003-01-25 09\")";
+  value = absTime("2003-01-25 09") ];
+
+[ comment = "absTime(\"2003-01-24T18:00:00-06:00\")";
+  value = absTime("2003-01-24T18:00:00-06:00") ];
+[ comment = "absTime(\"2003-01-25T00:00:00\")";
+  value = absTime("2003-01-25T00:00:00") ];
+[ comment = "absTime(\"2003-01-25\")";
+  value = absTime("2003-01-25") ];
+[ comment = "absTime(\"2003/01/25\")";
+  value = absTime("2003/01/25") ];
+[ comment = "absTime(\"20030125\")";
+  value = absTime("20030125") ];
+
+// Explicitly supplied values
+
+[ comment = "absTime()";
+  value = strcat("VARIABLE ", absTime()) ];
+[ comment = "absTime(1043506800)";
+  value = absTime(1043506800) ];
+[ comment = "absTime(1043506800.12345)";
+  value = absTime(1043506800.12345) ];
+[ comment = "absTime(1043506800, -6*60*60)";
+  value = absTime(1043506800, -6*60*60) ];
+
+// Errors
+[ comment = "absTime(\"2003-01-25T09:00:00-06\")";
+  value = absTime("2003-01-25T09:00:00-06") ];
+[ comment = "absTime(\"2003-01-25T09:00:00- 0600\")";
+  value = absTime("2003-01-25T09:00:00- 0600") ];
+[ comment = "absTime(\"2003-1-25\")";
+  value = absTime("2003-1-25") ];
+
+
+// Examples from the reference manual
+
+[ comment = "relTime(\"1+00:02:00.003\")";
+  value = relTime("1+00:02:00.003") ];
+[ comment = "relTime(\"1d0h2m0.003s\")";
+  value = relTime("1d0h2m0.003s") ];
+[ comment = "relTime(\"1d 2m 0.003s\")";
+  value = relTime("1d 2m 0.003s") ];
+[ comment = "relTime(\"1d 00:02:00.003\")";
+  value = relTime("1d 00:02:00.003") ];
+[ comment = "relTime(\"1d 00:00:120.003\")";
+  value = relTime("1d 00:00:120.003") ];
+[ comment = "relTime(\"86520.002991\")";
+  value = relTime("86520.002991") ];
+
+[ comment = "real(relTime(\"1+00:02:00.003\"))";
+  value = real(relTime("1+00:02:00.003")) ];
+[ comment = "relTime(86520.002991)";
+  value = relTime(86520.002991) ];

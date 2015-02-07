@@ -1,0 +1,2001 @@
+\documentclass{article}
+
+% $Header: /p/condor/repository/CONDOR_SRC/src_java/condor/classad/refman.tex,v 1.48 2005/05/06 20:18:40 solomon Exp $
+\usepackage{html}
+\usepackage{graphics}
+\usepackage{latexsym}
+
+\setlength{\oddsidemargin}{0in}
+\setlength{\evensidemargin}{0in}
+\setlength{\textwidth}{6.5in}
+
+% Abbreviations to use in grammars
+
+% Quoted character, 'x'
+\newcommand{\qc}[1]{$' \mathtt{#1} '$}
+% Single quote
+\newcommand{\apos}{$'$}
+% Bar separating alternatives
+\newcommand{\alt}{~\texttt{|}~}
+
+\title{The ClassAd Language Reference Manual\\Version 2.4}
+\author{Marvin Solomon\\Computer Sciences Department\\University of
+Wisconsin---Madison\\\texttt{solomon@cs.wisc.edu}}
+\date{May, 2004}
+\begin{document}
+
+\maketitle
+\section{Overview}
+
+This document provides a formal specification of the syntax and
+semantics of the \emph{ClassAd} (Classified Advertisement) language.
+The name of the language derives from its origin in the Condor distributed
+computing system~\cite{CONDOR_EXP,CONDOR_HUNT}, where it is used for discovery
+and allocation of resources.  Providers of computing resources submit
+advertisements describing their capabilities and declaring constraints and
+preferences for jobs they are willing to run.  Consumers submit ads
+describing their jobs.  Like the provider ads, these ads may impose constraints
+and express preferences regarding execution sites.  A \emph{matchmaker} process
+matches the producer and consumer ads.  All policy considerations are contained
+in the ads themselves; the matchmaker merely supplies the mechanism for
+interpreting the policies expressed in the ClassAd language.  The present
+document only defines the language. This introduction hints at how the language
+can be used to express a variety of scheduling policies, but a full discussion
+of this issue is beyond the scope of this document.
+
+The ClassAd language is a functional language.  The basic unit is the
+\emph{expression}, and execution entails \emph{evaluation} of expressions,
+replacing an expression with its \emph{normal form} or \emph{value}.  There are
+no side-effects: Evaluation has no effect other than calculating the value of
+an expression.
+The language is carefully designed to allow efficient evaluation.  In
+particular, an expression can be evaluated in time proportional to the size of
+the expression.\footnote{Actually, this statement is only true if
+each function call completes within a time bound proportional to the length
+of its arguments.
+All ``built-in'' functions have this property.}
+
+The most important type of expression is a \emph{record expression} (sometimes
+called a ``classad''), which is a set of name/value pairs.  The ``value'' in
+each pair may be an arbitrarily complex expression, including nested record
+expressions and lists of expressions.  An example is
+\begin{verbatim}
+    [
+        type = "gizmo";
+        components = {
+            [ type = "widget"; part_number = 12394 ],
+            [ type = "widget"; part_number = 92348 ]
+        };
+        main_component = components[0];
+        main_part = main_component.part_number;
+    ]
+\end{verbatim}
+
+ClassAd expressions are strongly but dynamically typed.   Supported types
+include integral and floating-point numbers, Boolean values (\textbf{true} and
+\textbf{false}), character strings, timestamps, and time intervals.  During the
+evaluation, invalid sub-expressions evaluate to the value \textbf{error}.  For
+example, \verb|1/0|, \verb|3 * "abc"|, \verb|{1, 2, 3}[5]|, and \verb|27[5]|
+all evaluate to \textbf{error}.  Attribute references (occurrences of
+identifiers on the right-hand side of attribute definitions) are replaced by
+their definitions.  Attribute names with no definition or circular definitions
+evaluate to \textbf{undefined}.  Attribute lookup is ``block structured'':  An
+attribute reference is resolved by searching all record expressions containing
+the reference, from innermost outward, for a matching definition (this matching
+is case-insensitive).  For example, the expression
+\begin{verbatim}
+    [
+        a = 1; b = c;
+        d = [ f = g; i = a; j = c; k = l; a = 2; ]
+        l = d.k; c = 3;
+    ]
+\end{verbatim}
+evaluates to
+\begin{verbatim}
+    [
+        a = 1; b = 3;
+        d = [ f = undefined; i = 2; j = 3; k = undefined; a = 2; ]
+        l = undefined; c = 3
+    ]
+\end{verbatim}
+
+There are currently two implementations of the ClassAd language, one in C++ and
+one in Java.  Both implementations should have identical external behavior
+conforming to this specification.\footnote{Of course, this is an idealized
+goal.  As of this writing, there are several ways in which the
+two implementations differ from each other and from this specification.  An
+effort is underway to improve conformance.}  In both implementations, ClassAd
+expressions are tree-structured objects.  Each implementation provides methods
+for constructing expressions, navigating through them, and evaluating them, as
+well as methods for translating between the internal data structures and
+character strings using either of two \emph{concrete syntaxes}, the ``native
+representation'' used in the examples above and XML~\cite{XML}.
+
+An important application of ClassAds is \emph{matchmaking}.  Matchmaking is
+applied to a pair $A$, $B$ of record expressions, each of which is expected to
+have a ``top-level'' definition of the attribute \texttt{Requirements}.  The
+\texttt{Requirements} attribute of $A$ is evaluated in an
+environment in which the attribute reference \texttt{other} evaluates to $B$,
+and \texttt{B.Requirements} is evaluated in an environment in which
+\texttt{other} evaluates to $A$,
+If both \texttt{Requirements} attributes evaluate to the specific value
+\textbf{true} (not \textbf{undefined}, \textbf{error}, or a value of some
+non-Boolean type), the expressions $A$ and $B$ are said to \emph{match}.  In
+Condor, matchmaking is used to match \emph{job} and \emph{machine} ads.  A
+machine ad describes the characteristics and current state of a machine.  It
+also has a \texttt{Requirements} attribute to restrict the set of jobs it is
+willing to run and a \texttt{Rank} attribute to indicate how much it ``likes''
+an individual job.  \texttt{Rank} should evaluate to a non-negative integer,
+with higher values indicating preferred jobs.  Similarly, a job ad has
+descriptive attributes, a \texttt{Requirements} attribute to constrain the set
+of acceptable machines, and a \texttt{Rank} attribute to express preferences.
+The Condor matchmaker uses these attributes to match jobs with machines.
+
+\section{Basic Concepts}
+
+An expression is either \emph{atomic}, consisting of a \emph{literal constant}
+or \emph{attribute reference}, or it is a \emph{composite} expression, composed
+of an \emph{operator} applied to one or more \emph{operands}.  A literal
+constant is an
+\emph{integer},
+\emph{real},
+\emph{string},
+\emph{absolute time},
+or \emph{relative time} literal,
+or one of the values
+\textbf{true},
+\textbf{false},
+\textbf{error}, or
+\textbf{undefined}.
+An attribute reference has an associated character string,
+such as \texttt{size} or \texttt{n123}, called an \emph{attribute name}.
+Operators include the familiar arithmetic, logical, and comparison operators of
+C, C++, or Java (such as \texttt{+}, \texttt{\&\&}, and \texttt{<=}), calls to
+functions (such as \texttt{substring(x, 1, 3)} or \texttt{member(x,l)}),
+operators for constructing lists:
+$\mathtt{\{}expr_1 , ... , expr_n \mathtt{\}}$,
+and
+records: $\mathtt{[} name_1 = expr_1 ; ... ; name_n = expr_n \mathtt{]}$, the
+subscript operator: $expr_1 \mathtt{[} expr_2 \mathtt{]}$, and the
+attribute-selection operator: $expr . name$.
+
+\section{Syntax}
+
+The ClassAd language has both an \emph{abstract} syntax and several
+\emph{concrete} syntaxes.  The abstract syntax describes each expression as an
+abstract data structure called its \emph{internal form}.
+Each concrete syntax maps an
+expression to a string of ASCII characters called its \emph{external form} or
+\emph{representation}.  There are currently three concrete syntaxes defined:
+the \emph{native} syntax, the \emph{old classad} syntax, and the \emph{xml}
+syntax.  Each implementation should provide an application programming-language
+interface (API) for manipulating internal-form expressions as data structures
+in the host programming language and converting between representations:
+\emph{parsing} to convert from external to internal form, and \emph{unparsing}
+to convert from internal to external form.
+
+Figure~\ref{fig:example1} shows a sample expression in abstract, native, and
+XML syntaxes.
+
+\begin{figure}[hbt!]
+\begin{center}
+\resizebox{!}{1.2in}{\includegraphics{example.eps}}
+
+\vspace{\baselineskip}
+(a) Abstract Syntax
+
+\vspace{\baselineskip}
+\verb/[ a = 1; b = a + 1.5; c = { a, "xxx" }; d = c[3] ]/
+
+\vspace{\baselineskip}
+(b) Native Syntax
+
+\vspace{\baselineskip}
+\begin{minipage}{3.5in}
+\begin{verbatim}
+<c><a name="a"><i>1</i></a>
+    <a name="b"><e>a+1.5</e></a>
+    <a name="c"><l><e>a<e><s>xxx</s></l></a>
+    <a name="d"><e>c[3]</e></a></c>
+\end{verbatim}
+\end{minipage}
+
+\vspace{\baselineskip}
+(c) XML Syntax
+
+\end{center}
+\caption{Example ClassAd Expression}
+\label{fig:example1}
+\end{figure}
+
+\subsection{Abstract Syntax}
+\label{sec:abstract_syntax}
+
+An internal-form expression is an ordered tree:  Each node is either a
+\emph{leaf} or an \emph{internal node} with a sequence of \emph{child} nodes.
+There is a unique \emph{root} node; every other node has a unique
+\emph{parent}.  The leaves of an expression tree are \emph{literal constants}
+and \emph{references}.  Each internal node contains an \emph{operator}.  Its
+children are called \emph{operands}.
+
+A literal constant is
+an \emph{integer}, \emph{real}, \emph{string}, \emph{boolean},
+\emph{absolute time},
+\emph{relative time},
+\emph{error}, or \emph{undefined}.
+All literal constants have \emph{values} as indicated in
+Table~\ref{tab:literals}.
+The value of an error literal is the unique value \textbf{error} of type Error.
+An error literal also has an \emph{annotation}, which is a sequence
+of zero or more non-null ASCII characters meant for human consumption.
+Similarly, an undefined literal has the value \textbf{undefined} and an
+annotation.
+Two literals are \emph{equivalent} if and only if they have the same value.
+
+\begin{table}[ht]
+\begin{center}
+\begin{tabular}{lp{4in}}
+\emph{Type} & \emph{Value or annotation} \\ \hline
+Integer & 32-bit signed, two's complement integer \\
+Real    & 64-bit IEEE 754 double-precision floating point number \\
+String  & Zero or more non-null characters\protect\footnotemark \\
+Boolean & The value \textbf{true} or \textbf{false} \\
+AbsTime & An indication of an instant in time and the time zone where this
+            time was measured\protect\footnotemark \\
+RelTime & Interval between two absolute times\protect\footnotemark \\
+Error   & Zero or more non-null ASCII characters providing a human-readable
+            explanation \\
+Undefined & Zero or more non-null ASCII characters providing a human-readable
+            explanation
+\end{tabular}
+\caption{Literal Constants}
+\label{tab:literals}
+\end{center}
+\end{table}
+\addtocounter{footnote}{-2}
+\footnotetext{Character values are currently limited to the range 1 -- 255
+(decimal).  Future versions of this specification may use Unicode for
+representing attribute names and string literals.}
+\addtocounter{footnote}{1}
+\footnotetext{This document does not specify the precision or range of values
+supported by absolute time literals.  The Java implementation currently stores
+the time as a signed, 64-bit offset in milliseconds from the epoch,
+while the C++ implementation uses a signed 32-bit offset in seconds
+(though this may be platform-dependent).  Both
+implementations use an epoch of 00:00, January 1, 1970, Universal Coordinated
+Time.  The time zone is recorded as an offset from UTC.}
+\addtocounter{footnote}{1}
+\footnotetext{This document does not specify the precision or range of values
+supported by relative time literals.  The Java implementation currently stores
+relative times as signed, 64-bit integer indicating milliseconds, while the C++
+implementation uses a signed 32-bit offset indicating seconds.}
+
+A reference contains an \emph{attribute name}, which is a sequence of zero or
+more non-null characters, or the reserved word \texttt{parent}.
+Two attribute names \emph{match} if the
+character sequences are the same length and corresponding characters are the
+same except for differences in case.  The following words are \emph{reserved},
+meaning that they may not be used as attribute names.
+\begin{verbatim}
+    error false is isnt parent true undefined
+\end{verbatim}
+Recognition of reserved words is independent of case.  For example,
+\texttt{false}, \texttt{FALSE}, and \texttt{False} are all reserved words.
+
+An internal node consists of an \emph{operator} and a sequence of child nodes
+called its \emph{operands}.
+Each operator has an \emph{arity} constraining the number of operands it may
+have.
+Operators are classified as \emph{unary} (one operand), \emph{binary} (two
+operands), \emph{ternary} (three operands), or \emph{varargs} (any number of
+operands).
+The operators and their arities are listed in the Table~\ref{tab:operators}.
+Table~\ref{tab:operators} also indicates the symbol used to represent each
+operator in the native syntax described in the following section.
+
+\begin{table}[ht]
+\begin{center}
+\begin{tabular}{ll}
+\begin{tabular}{|l|l|l|} \hline
+\emph{Arity} & \emph{Symbol}  & \emph{Name} \\ \hline
+1 & \verb@+@ & UPLUS \\
+1 & \verb@-@ & UMINUS \\
+1 & \verb@~@ & BIT\_COMPLEMENT \\
+1 & \verb@!@ & NOT \\
+2 & \verb@||@ & OR \\
+2 & \verb@&&@ & AND \\
+2 & \verb@|@ & BITOR \\
+2 & \verb@^@ & BITXOR \\
+2 & \verb@&@ & BITAND \\
+2 & \verb@==@ & EQUAL \\
+2 & \verb@!=@ & NOT\_EQUAL \\
+2 & \verb@is@ & SAME \\
+2 & \verb@isnt@ & DIFFERENT \\
+2 & \verb@<@ & LESS \\
+2 & \verb@>@ & GREATER \\
+2 & \verb@<=@ & LESS\_EQ \\
+\hline
+\end{tabular}
+&
+\begin{tabular}{|l|l|l|} \hline
+\emph{Arity} & \emph{Symbol}  & \emph{Name} \\ \hline
+2 & \verb@>=@ & GREATER\_EQ \\
+2 & \verb@<<@ & LEFT\_SHIFT \\
+2 & \verb@>>@ & RIGHT\_SHIFT \\
+2 & \verb@>>>@ & URIGHT\_SHIFT \\
+2 & \verb@+@ & PLUS \\
+2 & \verb@-@ & MINUS \\
+2 & \verb@*@ & TIMES \\
+2 & \verb@/@ & DIV \\
+2 & \verb@%@ & MOD \\
+2 & \verb@[]@ & SUBSCRIPT \\
+2 & \verb@.@ & SELECT \\
+3 & \verb@?:@ & COND \\
+\emph{var} & \verb@{ ... }@ & LIST \\
+\emph{var} & \verb@[ ... ]@ & RECORD \\
+\emph{var} & \verb@name(...)@ & FUNCTION\_CALL \\
+ & & \\
+\hline
+\end{tabular}
+\end{tabular}
+\caption{Operators}
+\label{tab:operators}
+\end{center}
+\end{table}
+
+With the exception of the binary operator SELECT and the varags operators
+RECORD and FUNCTION\_CALL, the operands may be arbitrary
+expressions.\footnote{The ClassAd language is a dynamically typed language.
+Mis-typed expressions such as \texttt{3/"foo"} are allowed by the syntax, but
+will evaluate to \textbf{error}.} The second operand of the SELECT operator,
+called the \emph{selector}, is an attribute name.
+The first operand of the FUNCTION\_CALL operator, the \emph{function name}, is
+a non-empty sequence of letters, digits, and underscores not starting with
+a digit; the remaining operands are called \emph{actual parameters}.
+Section~\ref{sec:functions} lists a set of \emph{built-in functions} that
+must be provided by all implementations.\footnote{Other functions may be
+provided by an extension mechanism to be defined in a subsequent version of
+this specification.}
+The RECORD operator has zero or more operands, called \emph{attribute
+definitions}.
+Each attribute definition is an ordered pair consisting of an attribute name
+and an arbitrary expression.
+The attribute names must be distinct (ignoring case)\footnote{The set of
+attribute names in a RECORD expression is logically a set of distinct
+case-independent strings, but the original ordering and case may be retained
+by an implementation so that the ``unparsing'' of an parsed expression more
+closely resembles the original.}
+We say that the attribute definition $N = E$ \emph{defines} the attribute name
+$N'$ if $N$ and $N'$ match.
+
+\subsection{Escaped Strings}
+\label{sec:escape}
+
+Each of the concrete syntaxes represents an attribute name or string literal
+as a sequence of printable ASCII characters (characters with values in the
+range 32 -- 126 inclusive).\footnote{In this section, all characters codes are
+given in decimal.}  The translation from concrete to abstract form (parsing)
+and from abstract to concrete form (unparsing) in each case shares the
+following two algorithms.
+
+In the concrete representation, a backslash may be followed by one of the
+characters
+\begin{verbatim}
+            b  t  n  f  r  "  '  \  0  1  2  3  4  5  6  7 
+\end{verbatim}
+In the value of the resulting String or attribute name, the backslash and
+one or more following characters are replaced by a single ASCII character as
+indicated by Table~\ref{tab:backslash}.
+
+\begin{table}[htb!]
+\begin{center}
+\begin{tabular}{ll}
+\emph{Escape Sequence} & \emph{Value (decimal)} \\
+\verb/\b/ & 8 (Backspace) \\
+\verb/\t/ & 9 (Horizontal Tab) \\
+\verb/\n/ & 10 (Linefeed) \\
+\verb/\f/ & 12 (Formfeed)  \\
+\verb/\r/ & 13 (Carriage Return) \\
+\verb/\\/ & 92 (Backslash)  \\
+\verb/\"/ & 34 (Quote)  \\
+\verb/\'/ & 39 (Apostrophe)  \\
+\verb/\/$octal\_digit^+$ & \emph{value of octal constant}
+\end{tabular}
+\caption{Backslash escapes}
+\label{tab:backslash}
+\end{center}
+\end{table}
+
+If the character following the backslash is an octal digit, the octal constant
+consists of three digits if the first digit is 0, 1, 2, or 3 and two digits
+otherwise.  However, the constant is terminated by the first character that is
+not an octal digit.  The string is ill-formed if a backslash is followed by any
+character other than those listed in Table~\ref{tab:backslash}, or if the value
+of an octal constant following a backslash is zero.
+
+Multiple canonical representations may parse to the sequence of characters, any
+of which may be considered an ``unparsing'' of that sequence.
+The \emph{canonical unparsing} of a sequence of characters is defined relative
+to an optional \emph{delimiter} chararacter, which may be quote (34),
+apostrophe (39), or neither.
+Printable ASCII characters (in the range 32 -- 126 inclusive) are represented
+as themselves,  with the exception that each backslash (92) or delimiter
+character (if any) is preceded by an extra backslash.
+Each character with the value 8, 9, 10, 12, or 13 is replaced by a backslash
+followed by the character \verb/b/, \verb/t/, \verb/n/, \verb/f/, or \verb/r/,
+respectively.
+Any other character is replaced by a backslash followed by a three-digit octal
+representation of its value.
+
+For example, the strings
+\begin{verbatim}
+    a'\n
+    a\'\n
+    a\47\012
+    \141\047\012
+\end{verbatim}
+all parse to the three-character sequence consisting of a lower-case \verb/a/,
+an apostrophe, and a newline (97, 39, 10 decimal).  The canonical unparsing
+is the second of these if apostrophe is the delimiter, and the first otherwise.
+
+\subsection{Native Syntax.}
+\label{sec:native_syntax}
+
+The native syntax of the ClassAd language is quite similar to C, C++, or Java.
+The external representation of an expression consists of a sequence of
+\emph{tokens} separated by optional white space and/or comments.  Comments are
+as in C++ or Java:  The string \texttt{//} introduces a comment that continues
+until the end of the current line, and \texttt{/*} introduces a comment that
+continues until the next occurrence of \texttt{*/} (such comments do not nest).
+
+\subsubsection{Tokens.}
+Tokens include \emph{reserved words}, \emph{integer}, \emph{floating-point},
+and \emph{string literals}, \emph{attribute names}, \emph{operators}, and the
+additional lexical
+tokens
+equal sign (\texttt{=}),
+parentheses (\texttt{(~)}),
+braces (\verb|{ }|),
+brackets (\texttt{[~]}),
+comma (\texttt{,}), and
+semicolon (\texttt{;}).
+The operators are shown in Table~\ref{tab:operators} in the previous section.
+The syntax of literals and attribute names is shown in Table~\ref{tab:tokens}.
+
+\begin{table}[ht]
+\begin{center}
+\begin{tabular}{lcl}
+\emph{token} & ::= &
+    \emph{attribute\_name}
+        \alt \emph{literal}
+        \alt \emph{operator}
+        \alt \emph{punctuation}
+        \alt \emph{reserved\_word} \\
+\emph{attribute\_name} & ::= &
+    \emph{unquoted\_name} \alt \emph{quoted\_name} \\
+\emph{literal} & ::= &
+    \emph{integer\_literal} \\
+    &&\alt \emph{floating\_point\_literal} \\
+    &&\alt \emph{string\_literal} \\
+\emph{punctuation} & ::= &
+    \qc{=} \alt \qc{(} \alt \qc{)} \alt \qc{\{}
+            \alt \qc{\}} \alt \qc{[} \alt \qc{]} \alt \qc{,}
+            \alt \qc{;} \\
+\emph{unquoted\_name} & ::= &
+    (~ \emph{letter} \alt \apos\verb/_/\apos ~)
+        ~ (~  \emph{letter}
+                \alt \emph{decimal\_digit}
+                \alt \apos\verb/_/\apos
+          ~)$^*$ \\
+\emph{quoted\_name} & ::= &
+    \apos\verb/'/\apos
+        (~ \emph{non\_quote} \alt \qc{"} ~)$^+$ \apos\verb/'/\apos \\
+\emph{integer\_literal} & ::= &
+    \emph{nonzero\_digit} ~ \emph{decimal\_digit}$^*$ \\
+    &&\alt \qc{0} ~ \emph{octal\_digit}$^*$ \\
+    &&\alt \qc{0} ~ (~ \qc{x} \alt \qc{X}~) ~ \emph{hex\_digit}$^+$ \\
+\emph{floating\_point\_literal} & ::= &
+    \emph{digit}$^+$ ~ \qc{.} ~ \emph{digit}$^*$ ~ \emph{exponent}$^?$ \\
+    &&\alt \qc{.} ~ \emph{digit}$^+$ ~ \emph{exponent}$^?$ \\
+    &&\alt \emph{digit}$^+$ ~ \emph{exponent} \\
+\emph{exponent} & ::= &
+    (~ \qc{e} \alt \qc{E}~)
+        ~ (~ $'+'$ \alt $'\mathtt{-}'$ ~) $^?$
+        ~ \emph{decimal\_digit}$^+$ \\
+\emph{string\_literal} & ::= &
+    \qc{"} ~ (~ \emph{non\_quote} \alt \apos\verb/'/\apos ~)$^*$
+        ~ \qc{"} \\
+\emph{letter} & ::= &
+    \qc{a}...\qc{z} \alt \qc{A}...\qc{Z} \\
+\emph{non\_quote} & ::= &
+    \apos\verb/\/\apos ~ \emph{escaped\_char} \\
+    &&\alt \apos\verb/\/\apos ~ \emph{octal\_digit} ~ \emph{octal\_digit}$^?$ \\
+    &&\alt \apos\verb/\/\apos ~ (~ \qc{0}...\qc{3}~)  ~ \emph{octal\_digit}
+        ~ \emph{octal\_digit} \\
+    &&\alt \emph{other\_character} \\
+\emph{escaped\_char} & ::= &
+    \qc{n}
+        \alt \qc{t}
+        \alt \qc{b}
+        \alt \qc{r}
+        \alt \qc{f}
+        \alt \apos\verb/\/\apos
+        \alt \qc{"} \alt \apos\verb/'/\apos \\
+\emph{decimal\_digit} & ::= &
+    \qc{0}...\qc{9} \\
+\emph{nonzero\_digit} & ::= &
+    \qc{1}...\qc{9} \\
+\emph{octal\_digit} & ::= &
+    \qc{0}...\qc{7} \\
+\emph{hex\_digit} & ::= &
+    \emph{decimal\_digit}
+        \alt \qc{a}...\qc{f} \alt \qc{A}...\qc{F} \\
+\end{tabular}
+\normalfont
+\caption{Names and Literals}
+\label{tab:tokens}
+\end{center}
+\end{table}
+
+In Table~\ref{tab:tokens}, parentheses are used for grouping, literal
+characters are enclosed in single quotes, and the postfix
+meta-operators $*$, $+$, and $?$ are used to denote zero or more
+repetitions, one or more repetitions, and zero or one repetitions, respectively.
+The name \verb|other_character| denotes any ASCII character other than
+Quote (34)\footnote{In this section, all characters codes are given in
+decimal.}
+apostrophe (39),
+backslash (92),
+linefeed (10),
+carriage-return (13),
+or null (0).
+The name \verb|reserved_word| denotes any of the  strings
+\begin{verbatim}
+    error false is isnt parent true undefined
+\end{verbatim}
+in any combination of upper or lower case letters.
+
+A ClassAd expression consists of a sequence of tokens, separated by whitespace.
+Whitespace consists of one or more occurrences of the ASCII characters
+Space (32),
+Horizontal Tab (9),
+Linefeed (10),
+Vertical Tab (11),
+Formfeed (12), or
+Carriage Return (13).\footnote{This definition of whitespace corresponds
+to the C and C++ programming languages.  The Java Language Specification
+(Second Edition) defines whitespace similarly, but omits 
+Vertical Tab.  The latter definition also corresponds to the (deprecated) method
+\texttt{Character.isSpace} in the standard Java API.  The API documentation
+recommends replacing \texttt{Character.isSpace} with
+\texttt{Character.isWhitespace}, which adds Vertical Tab as well as characters
+with codes 28--31 decimal (FS, GS, RS, and US) and several Unicode characters
+with codes greater than 256.}
+Whitespace is only required between two tokens if the first character of the
+second token could be construed as an extension of the first token according to
+the rules in Table~\ref{tab:tokens}.  Two consecutive
+\texttt{string\_literal}s separated by whitespace are equivalent to a single
+literal whose value is the concatenation of the values of the two literals.
+
+A \verb/string_literal/ or \verb/quoted_name/ is parsed according to the
+common rules for Escaped Strings in Section~\ref{sec:escape}.
+The \verb/quoted_name/ syntax allows an attribute name to be any sequence of
+non-null ASCII characters.  If the sequence conforms to the syntax of
+\verb/unquoted_name/, the attribute name may be represented using either
+syntax.  For example, the following are three representations in the native
+syntax of the \emph{same} attribute name:
+\begin{verbatim}
+    _abc        '_abc'       '_ab\143'
+\end{verbatim}
+
+\subsubsection{Grammar.}
+The native syntax is defined by the context-free grammar in
+Table~\ref{tab:grammar}.
+
+\begin{table}[htb!]
+\begin{center}
+\begin{tabular}{lcl}
+\emph{expression} & ::= &
+    \emph{binary\_expression} \\
+    && \alt \emph{binary\_expression}
+                \qc{?} \emph{expression}  \qc{:}  \emph{expression} \\
+\emph{binary\_expression} & ::= &
+    \emph{binary\_expression}
+        \emph{binary\_operator}
+        \emph{prefix\_expression} \\
+    && \alt \emph{prefix\_expression} \\
+\emph{binary\_operator} & ::= &
+    \apos\verb/||/\apos \\
+    && \alt \apos\verb/&&/\apos \\
+    && \alt \qc{|} \\
+    && \alt \apos\verb/^/\apos \\
+    && \alt \apos\verb/&/\apos \\
+    && \alt \apos\verb/==/\apos
+          \alt \apos\verb/!=/\apos
+          \alt \apos\verb/is/\apos
+          \alt \apos\verb/isnt/\apos \\
+    && \alt \qc{<}
+           \alt \qc{>}
+           \alt \apos\verb/<=/\apos
+           \alt \apos\verb/>=/\apos \\
+    && \alt \apos\verb/<</\apos
+           \alt \apos\verb/>>/\apos
+           \alt \apos\verb/>>>/\apos \\
+    && \alt \qc{+} \alt \qc{-} \\
+    && \alt \qc{*} \alt \qc{/} \alt \apos\verb/%/\apos \\
+\emph{prefix\_expression} & ::= &
+    \emph{suffix\_expression} \\
+    && \alt \emph{unary\_operator} \emph{suffix\_expression} \\
+\emph{unary\_operator} & ::= &
+    \qc{+} \alt \apos\verb/-/\apos \alt \apos\verb/~/\apos \alt \qc{!} \\
+\emph{suffix\_expression} & ::= &
+    \emph{atom} \\
+    && \alt \emph{suffix\_expression} \qc{.} \emph{attribute\_name} \\
+    && \alt \emph{suffix\_expression} \qc{[} \emph{expression} \qc{]} \\
+\emph{atom} & ::= &
+    \emph{attribute\_name} \\
+    && \alt \apos\verb/error/\apos
+          \alt \apos\verb/false/\apos
+          \alt \apos\verb/true/\apos
+          \alt \apos\verb/undefined/\apos
+          \alt \apos\verb/parent/\apos \\
+    && \alt \emph{integer\_literal} \\
+    && \alt \emph{floating\_point\_literal} \\
+    && \alt \emph{string\_literal}$^+$ \\
+    && \alt \emph{list\_expression} \\
+    && \alt \emph{record\_expression} \\
+    && \alt \emph{function\_call} \\
+    && \alt \qc{(} \emph{expression} \qc{)} \\
+\emph{list\_expression} & ::= &
+    \qc{\{}
+        (~ \emph{expression}  (~ \qc{,} \emph{expression} ~)$^*$
+                                \qc{,}$^?$ ~)$^?$
+        \qc{\}} \\
+\emph{record\_expression} & ::= &
+    \qc{[}
+         (~ \emph{attribute\_definition}
+                (~ \qc{;} \emph{attribute\_definition} ~)$^*$
+                \qc{;}$^?$~)$^?$
+    \qc{]} \\
+\emph{attribute\_definition} & ::= &
+    \emph{attribute\_name} \qc{=} \emph{expression} \\
+\emph{function\_call} & ::= &
+    \emph{unquoted\_name} \qc{(}  (~ \emph{expression}
+        (~ \qc{,} \emph{expression}~)$^*$ ~)$^?$ \qc{)}
+\end{tabular}
+\caption{Native Expression Grammar}
+\label{tab:grammar}
+\end{center}
+\end{table}
+
+To simplify the grammar, productions enforcing the precedence of operators
+have been omitted.
+The actual precedences are indicated by the order in which operators are
+listed.
+Operators are listed in order of increasing precedence (most tightly binding
+last), with operators on the
+same line having equal precedence.
+All binary operators are left-associative.
+Unary operators have higher precedence than binary operators other than
+subscripting and attribute selection.
+The meta-syntactic symbols \verb|()+?| are used as in the definition in the
+previous section.
+A complete YACC grammar for the ClassAd language is contained in
+Appendix~\ref{sec:yacc}.
+
+\subsubsection{Unparsing.}
+\label{sec:unparsing}
+Parsing associates with each \emph{expression}, \emph{binary\_expression},
+\emph{prefix\_expression}, or \emph{suffix\_expression} a node in the
+internal representation of an expression.  For example, a
+\emph{binary\_expression} of the form $expr_1 + expr_2$ parses to an internal
+expression with operator PLUS and operands that are the results of parsing
+$expr_1$ and $expr_2$.
+Multiple distinct strings may parse to the same internal form, due to presence
+of optional comments, whitespace, and parentheses.  To support
+certain built-in functions such as \textbf{string}, we define for each
+expression a \emph{canonical unparsing}, which parses to that expression.
+
+The canonical unparsing of an expression is completely parenthesized and has no
+comments and no whitespace outside of string literals
+or attribute names.  For example, the strings ``\verb|-x + 3 * (y + 1)|'' and
+``\verb|((-x)+(3*(y+1)))|'' both parse to the same internal form.
+The second string is the canonical unparsing.
+
+The canonical unparsing of an attribute name is simply the name itself if it
+conforms to the syntax of \emph{unquoted\_name} in Table~\ref{tab:tokens}.
+Otherwise, an attribute name is unparsed using the \emph{quoted\_name} syntax.
+A string literal is unparsed as a \emph{string}.
+Inside a \emph{quoted\_name} or \emph{string}, the unparsing uses the rules
+defined in Section~\ref{sec:escape}, with apostrophe as the delimiter for a
+\emph{quoted\_name} and quote as the delimter for a \emph{string}.
+
+The literals
+\textbf{true},
+\textbf{false},
+\textbf{undefined}, and
+\textbf{error}
+unparse to
+\texttt{true},
+\texttt{false},
+\texttt{undefined}, and
+\texttt{error},
+respectively.  The annotation of an Error or Undefined literal is not
+included in the canonical unparsing.
+
+The canonical unparsing of an integer literal is the decimal representation of
+its value, with no leading zeros unless the value is exactly zero and no sign
+unless the value is negative.
+
+The canonical unparsing of a real literal is one of the strings
+\verb/0.0/, \verb/-0.0/, \verb/real("INF")/, \verb/real("-INF")/, or
+\verb/real("NaN")/, or a normalized ``scientific'' representation such as
+\verb/6.02E24/ or \verb/3.14159265E0/, with one non-zero digit before the
+decimal point and as many digits following the decimal point as necessary
+to represent the value exactly (but at least one digit must follow the decimal
+point).
+For details, see Section~\ref{sec:xml_syntax} on the XML representation for
+details.
+
+The canonical unparsing of an absolute time literal has the form
+\texttt{absTime("yyyy-mm-ddThh:mm:ss$\pm$zz:zz")} where the argument is a string
+representation of the time and date in ISO 8601 syntax, including the local
+time zone as hours and minutes from the prime
+meridian (negative for west).
+The canonical unparsing of a relative time has the form
+\texttt{relTime("d+hh:mm:ss.mmm")} where the argument is a string representation
+of the duration in days, hours, minutes, seconds, and
+milliseconds.\footnote{For this conversion, leap seconds and daylight savings
+time transitions are not taken into account.  Every minute is 60
+seconds, and every day is 24 hours.}
+The suffix \texttt{.mmm} is omitted if the number of milliseconds is zero,
+and leading fields are omitted, together with the following punctuation, if
+their values are zero.  Leading digits of the first non-zero field are also
+omitted.  The string begins with a minus sign if the value
+is negative.  Examples are \texttt{absTime("1949-03-11T08:17:00-06:00")},
+\texttt{relTime("-5:00")}, and \texttt{relTime("0")}.
+
+The canonical unparsing of a list or record expression omits the optional comma
+or semicolon following the last item.  In particular, the empty record
+unparses as \verb|[]| and the empty list unparses as \verb|{}|.
+
+\subsection{Old ClassAd Syntax}
+\label{sec:old_syntax}
+
+The so-called ``old'' classad syntax is used in some versions of Condor to
+transmit classads (Record Expressions) over a network connection.  It is
+deprecated.  Not all expressions can be represented in the old syntax.  To be
+so represented, an expression must satisfy the following
+conditions.\footnote{The ``old''" classad language had many more restrictions
+than those listed here.  An expression that meets these conditions can be
+represented in the Old syntax for transmission over a connection, but it may
+not be intelligible to a legacy application receiving the transmission.}
+\begin{itemize}
+\item The operator at the root node of the tree is RECORD.
+\item The root node has two attribute definitions that define
+attribute names \texttt{MyType} and \texttt{TargetType} (ignoring case).
+\item All attribute names conform to the syntax of \emph{unquoted\_name} in
+Table~\ref{tab:tokens}.
+\end{itemize}
+
+If the root RECORD node has $N$ children, the representation consists of 4
+bytes representing the binary value $N$, most significant byte first, followed
+by $N$ strings of ASCII characters, each terminated by a null character.  The
+last two strings are representations, in the native syntax, of the expressions
+in the attribute definitions corresponding to attribute names \texttt{MyType}
+and \texttt{TargetType}, in that order.  The remaining $N-2$ strings correspond
+to the other $N-2$ operands of the RECORD operator.  Each of these strings has
+the form \verb/"/$name  =  expr$\verb/"/, where $name$ is the attribute name of
+the definition, and $expr$ is a representation, using the native syntax, of the
+corresponding expression.
+
+\subsection{XML Syntax}
+\label{sec:xml_syntax}
+
+A Document Type Definition (DTD) for the XML representation may be found in
+Appendix~\ref{sec:dtd}, and a schema definition compliant with
+the XML Schema standarad~\cite{XSD-0} is in Appendix~\ref{sec:schema}.
+
+In the following paragraphs, \emph{xml\_escape(string)} denotes a string
+of printing ASCII characters that results from the following two steps,
+excuted in order.  First, the \emph{string} is replaced by its canonical
+unparsing, as defined in Section~\ref{sec:escape}.  Then, each occurrence
+of \verb/</, \verb/&/, or \verb/>/ is replaced by \verb/&lt;/, \verb/&amp;/,
+or \verb/&gt;/, respectively.  The function \emph{xml\_escape\_attr} is
+defined similarly, except that in the second step, \verb/"/ is also
+replaced by \verb/&quot;/.
+
+The canonical XML representation of an expression depends on the operator at
+the root of the expression.  All ``simple'' (atomic) values conform to types
+defined in \emph{XML Schema Part 2: Datatypes}~\cite{XSD-2}.
+In this section, these types are referenced as if they were in the namespace
+\verb/xsd/, e.g., \verb/xsd:string/, where
+\verb|xmlns:xsd=http://www.w3.org/2001/XMLSchema|.
+A complete XML Schema is provided in Appendix~\ref{sec:schema}.
+
+A string literal is represented as \verb|<s>|\emph{xml\_escape(s)}\verb|</s>|,
+where $s$ is the value of the literal.
+The content of an \verb/<s>/ element has type \verb/xsd:string/.
+
+An integer literal is represented as \verb|<i>|\emph{dddd}\verb|</i>|, where
+\emph{dddd} is the decimal representation of its value, with no excess leading
+zeros (that is, the first digit is zero if and only if the value is zero),
+preceded by a minus sign if the value is negative.
+The content of an \verb/<i>/ element has type \verb/xsd:int/.
+
+A real literal is represented as \verb|<r>|\emph{s}\verb|</r>|, where
+\emph{s} is the representation of the value of the literal in ``scientific''
+notation, for example, \verb|<r>3.141592653589793E+00</r>|.
+More specifically
+\begin{itemize}
+    \item The values positive and negative infinity and not-a-number are
+    represented by
+    \verb/INF/,
+    \verb/-INF/,
+    and
+    \verb/NaN/,
+    respectively.
+    \item Any other value is represented by the concatenation of the
+    the following strings, with no characters between them:
+    \begin{itemize}
+        \item an optional leading minus sign (omitted if the value is
+            positive),
+        \item a ``mantissa'' of the form \verb/d.f/, where
+            \verb/d/ is a digit and \verb/f/ is a sequence of 15 digits,
+        \item an upper-case letter \verb/E/,
+        \item a plus or minus sign, and
+        \item an integer exponent of two or three digits.
+    \end{itemize}
+    The first digit of the mantissa must be non-zero unless the value being
+    represented is zero.  If the exponent is three digits, the first digit
+    must not be zero.  Note that a sign is required in the exponent.
+\end{itemize}
+The content of an \verb/<i>/ element has type \verb/xsd:double/.
+Except for the representations for positive and negative infinity and
+not-a-number, which conform to the specification of \verb/xsd:double/,
+this representation is meant to conform to the \texttt{printf} format
+\verb/%1.15E/.
+
+A true or false boolean literal is represented by \verb|<b v="t"/>|
+or \verb|<b v="f"/>|, respectively.
+
+An Error literal with non-empty annotation $a$ is represented by the string
+\verb|<er a="|\emph{annot}\verb|"/>|, where \emph{annot} is
+\emph{xml\_escape\_attr(a)}.  If the annotation is empty, the representation is
+\verb|<er/>|.
+
+An Undefined literal with non-empty annotation $a$ is represented by the string
+\verb|<un a="|\emph{annot}\verb|"/>|, where \emph{annot} is
+\emph{xml\_escape\_attr(a)}.  If the annotation is empty, the representation is
+\verb|<un/>|.
+
+An absolute time literal is represented as
+\texttt{<at>yyyy-mm-ddThh:mm:ss$\pm$zz:zz</at>}, where the element content is a
+string representation of the time and date in a restricted ISO 8601 syntax,
+including the local time zone as hours and minutes from the prime
+meridian (negative for west).
+The content of an \verb/<at>/ element has type \verb/xsd:dateTime/.
+An example is \verb|<at>2003-01-25T09:00:00-06:00</at>|.
+
+A relative time literal is represented as \texttt{<rt>sPnDTnHnMn.mmmS</rt>},
+where \texttt{s} is \texttt{-} for negative values and omitted for positive
+values, each \texttt{n} is a non-negative integer, representing
+days, hours, minutes, and seconds, \texttt{mmm} represents a number
+of milliseconds, and the letters \verb/PDTHMS/ are included verbatim.
+The suffixes represent scale factors: \verb/DT/ for days (24*60*60),
+\verb/H/ for hours (60*60), \verb/M/ for minutes (60) and \verb/S/ for
+seconds (1).  A field (including its following scale factor)
+may be omitted if its value is zero.  If the value is an integral number of
+seconds, the number of milliseconds, along with the preceding decimal point,
+may be omitted, but if present, it must be represented as exactly three
+digits.  Finally, the letter \verb/T/ is omitted if the \verb/H/, \verb/M/,
+and \verb/S/ fields are all omitted.
+Note that these rules permit multiple representation of the same value. 
+For example,
+\texttt{<rt>PT1H2S</rt>},
+\texttt{<rt>PT60M2S</rt>}, and
+\texttt{<rt>PT3602.000S</rt>} represent the same value.
+The \emph{canonical} representation is defined by the limitation that the
+number of hours is less than 24, and the numbers of minutes and seconds are
+each less than 60.  Moreover, each field (including milliseonds) is omitted if
+its value is zero.  However as a special case, the value zero is represented as 
+\texttt{<rt>PT0S</rt>}.  Thus the first of the three examples above is the
+canonical representation of a duration of 3602 seconds.
+The content of an \verb/<rt>/ element has type \verb/xsd:duration/.
+
+If the root operator is LIST, the XML representation consists of the string
+\verb|<l>| followed by the concatenation of the representations of its 
+operands (in order), followed by the string \verb|</l>|.
+The content of an \verb/<l>/ element is a sequence of elements of any the
+types listed in this section except \verb/<a>/.
+
+If the root operator is RECORD, the XML representation consists of the string
+\verb|<c>| followed by the concatenation of the representations of its 
+constituent definitions, followed by the string \verb|</c>|.
+The representation of an attribute definition $name~=~expr$ consists of the
+string \verb|<a n = "|\emph{xml\_escape\_attr(name)}\verb|">| followed by the
+XML representation of $expr$ followed by the string \verb|</a>|.
+The content of a \verb/<c>/ element is a sequence of \verb/<a>/ elements.
+The content of an \verb/<a>/ element is an element of any of the types
+listed in this section except \verb/<a>/.
+
+In all other cases, the XML representation of an expression consists
+of \verb|<e>|\emph{xml\_escape(s)}\verb|</e>|,
+where $s$ is the canonical unparsing of the expression in the native syntax.
+The content of an \verb/<e>/ element has type \verb/xsd:string/.
+
+Non-canonical XML representations may differ from the canonical representation
+in the following ways:
+\begin{itemize}
+\item Additional whitespace may be added to all elements other \verb/<s>/
+or \verb/<r>/ elements, provided the results are syntactically valid.
+(For example, spaces may not be placed between the digits of an \verb/<i>/
+element.)
+\item Additional whitespace may be added to tags, but not inside attributes in
+tags.
+\item The content of an \verb/<r>/ element may use an unnormalized
+representation (more or fewer digits before or after the decimal point),
+the \verb/E/ and the following exponent may be omitted (implying an exponent
+of zero), the decimal point may be omitted if the fractional part of the
+mantissa is empty, and any combination of upper and lower case letters may
+be used for the strings \verb/E/, \verb/INF/, and \verb/NaN/.
+\item The content of an \verb/<at>/ element may be any string which is a valid
+argument to the \textbf{absTime} built-in function.
+\item The content of an \verb/<rt>/ element may be any string which is a valid
+argument to the \textbf{relTime} built-in function.
+\item Any expression $e$ may be represented by
+\verb|<e>|\emph{xml\_escape(s)} \verb|</e>|, where $s$ is any string that
+parses to $e$ according to the native syntax.
+\end{itemize}
+For example, 
+\begin{verbatim}
+    <c><a n="the value"><e>b</e></a><a n="b"><r>3.14E0<\r></a><c>
+    <c>
+        <a n="the value"> <e>   b</e> </a>
+        <a         n="b"> <e>3.14</e> </a>
+    <c>
+    <e>[ 'the value' = b; b = 3.14 ]</e>
+\end{verbatim}
+are three XML representations of the same expression; the first is the
+canonical representation.
+
+\section{Evaluation}
+\label{sec:evaluation}
+
+This section defines the semantics of the ClassAd language by explaining how
+to \emph{evaluate} an expression.{In this section, ``expression'' means an
+internal-form expression tree.}
+In general, a composite expression is evaluated by recursively evaluating its
+component sub-expressions and then using its top-level operator to combine the
+results.
+However, there are situations in which evaluation of an expression $E$ depends
+on parts of a \emph{context}, which is an expression containing $E$ as a
+sub-expression.
+For example, in the expression
+\begin{verbatim}
+    [ a = 3;  b = [ c = a ] ],
+\end{verbatim}
+the second occurrence of \verb/a/ (an attribute reference) is evaluated by
+searching the two containing Record expressions for a definition of \verb/a/,
+yielding the constant \verb/3/.
+
+More formally, an \emph{expression in context} (EIC) is a pair $(E, C)$
+consisting of an expression $C$ (the context) and a designated occurrence of
+a sub-expression $E$ of $C$.
+The semantics of the ClassAd language is defined by a recursive function
+\emph{eval} from EICs to EICs.
+A \emph{top-level} EIC is an EIC of the form $(E, E)$.
+For brevity, we will occasionally abbreviate the top-level EIC $(E, E)$ as $E$,
+particularly when $E$ is a literal constant.
+For example, the EIC (\textbf{error}, \textbf{error}) may be written as
+\textbf{error}.
+An expression $E$ is evaluated by computing \emph{eval(E, E)} and extracting
+the sub-expression from the resulting EIC.
+
+The set of EICs with context $C$ is partially ordered by the relation
+$\sqsubseteq$, defined by $(E, C) \sqsubseteq (E', C)$ iff $E$ is a
+sub-expression of $E'$.
+When we speak of the ``minimal'' EIC with a given property, we mean the 
+one that is minimal with respect to $\sqsubseteq$.
+An EIC $(E, C)$ is called a \emph{scope} if the top-level operator of $E$
+is RECORD.
+
+Define \emph{lookup(s, (E, C))}, where $s$ is a string and $(E, C)$ is an
+EIC, to be the EIC $(E', C')$, where
+\begin{itemize}
+\item
+If $s$ matches\footnote{We are using the term ``match'' here as defined in
+    Section~\ref{sec:abstract_syntax}:  Two strings match if they are identical
+    except for differences in case.}
+the string \verb/"parent"/ and
+there is a scope $(E_p, C)$ such that $(E, C) \sqsubseteq (E_p, C)$,
+then $(E', C') = (E_p, C)$, where $(E_p, C)$ is the minimal such scope.
+\item
+Otherwise, if
+there is a scope $(E_d, C)$ such that $(E, C) \sqsubseteq (E_d, C)$
+and $E_d$ contains a definition $t = E_t$
+such that $t$ matches $s$,
+let $t = E_t$ be the definition in the minimal such scope.
+Then $(E', C') = (E_t, C)$.
+\item
+Otherwise, $(E', C') = (\mathbf{undefined}, \mathbf{undefined})$.
+\end{itemize}
+
+\noindent
+For example, let $C$ be the expression
+\begin{verbatim}
+    [ a = x;  b = [ a = y; c = a]; d = a ],
+\end{verbatim}
+and let $R$ denote the inner Record expression.
+$C$ contains two occurrences of the attribute-reference expression \verb/a/.
+Let $E_1$ denote the occurrence inside $R$ and $E_2$ the other occurrence.
+Then
+$(E_1, C) \sqsubseteq (R, C) \sqsubseteq (C, C)$,
+$(E_2, C) \sqsubseteq (C, C)$,
+$\mathit{lookup}(\mathtt{a}, (E_1, C)) = (y, C)$,
+$\mathit{lookup}(\mathtt{a}, (E_2, C)) = (x, C)$,
+$\mathit{lookup}(\mathtt{c}, (E_1, C)) = (E_1, C)$, and
+$\mathit{lookup}(\mathtt{c}, (E_2, C)) = (\mathbf{undefined},
+\mathbf{undefined})$.
+
+\subsection{Types, Undefined, and Error}
+
+Each expression has a \emph{type}, which is one of Integer, Real, String,
+Boolean, AbsTime, RelTime, Undefined, Error, List, or Record.
+The types Integer and Real are collectively called numeric types.
+The types AbsTime and RelTime are collectively called timestamp types.
+Each operator imposes constraints on the types of its operands.
+If these constraints are not met, the value returned by the operator is
+\textbf{error}.
+
+An attribute reference with attribute name $N$ evaluates to
+\textbf{undefined} if the reference is not contained in any scope that defines
+$N$.
+It may also evaluate to \textbf{undefined} in the presence of loops,
+as in
+\begin{verbatim}
+    [ a = b; b = a ].
+\end{verbatim}
+
+Most operators are ``strict'' with respect to \textbf{undefined} and
+\textbf{error}.
+The only exceptions are the Boolean operators described in
+Section~\ref{sec:boolean_ops},
+the operators \textbf{is} and \textbf{isnt} described in
+Section~\ref{sec:is_isnt},
+and the LIST and RECORD constructors described in
+Section~\ref{sec:list_and_record}.
+Strict evaluation obeys the following ordered sequence of rules.
+\begin{itemize}
+\item If the operands do not obey the type restrictions imposed by the
+    operator, the result of the evaluation is \textbf{error}.
+    The following sections list all combinations of types accepted by each
+    operator.
+    None of the strict operators accept operands of type Error, so this rule
+    implies that if any sub-expression evaluates to \textbf{error}, the
+    expression evaluates to \textbf{error}.
+    This rule also catches ``type errors'' such as \texttt{"foo" / 3}.
+\item Otherwise, if any operand of a strict operator is \textbf{undefined},
+    the result is \textbf{undefined}.
+\item Otherwise, the result is computed from the operands as described in the
+    following sections.
+\end{itemize}
+
+\subsection{Atomic Expressions}
+
+A literal constant evaluates to itself.
+More precisely, if $c$ is an occurrence of a literal constant, then
+\emph{eval(c, C) = (c, C)}.
+
+If $x$ is an attribute reference with attribute name $N$, then
+\emph{eval(x, C) = eval(lookup(N, (x, C)))}.
+In particular, $(x, C)$ evaluates to \textbf{undefined} if there is no scope
+$(R, C)$ containing the indicated occurrence of $x$ such that $R$ defines $N$.
+If this recursive definition leads directly or indirectly to a call
+\emph{eval(x, C)}, the result is \textbf{undefined}.
+
+\subsection{Composite Expressions}
+
+List and Record expressions evaluate to themselves.
+More precisely, if $E$ is an expression whose root operator is LIST or
+RECORD, \emph{eval(E, C) = (E, C)}.
+The operators SELECT and SUBSCRIPT are discussed below.
+For all other operators, evaluation is ``bottom-up'' and the result is
+a ``pure value''.
+More precisely, if $\odot$ is a binary operator other than
+SELECT, or SUBSCRIPT, then
+\[ eval(E_1 \odot E_2, C) = (c, c) \]
+where
+\[ eval(E_1, C)  = (E_1', C_1), \]
+\[ eval(E_2, C)  = (E_2', C_2), \]
+and $c$ is the (literal constant) result of applying operator $\odot$ to the
+expressions $E_1'$ and $E_2'$, as defined in the following sections.
+Similar rules apply to unary and ternary operators.
+
+The operators found in C, C++, or Java are generally evaluated according to the
+rules of those languages.
+In cases where the specifications of those languages differ, the ClassAd
+language follows the Java semantics because it is more precise (the C and C++
+specifications occasionally say the results are ``undefined'' or
+``implementation defined'' in unusual situations).
+The only deviations from Java semantics involve exceptions.
+In cases where Java specifies that evaluation throws an exception, the ClassAd
+language returns the constant \textbf{error}.  The constants \textbf{error} and
+\textbf{undefined} also require special treatment when supplied as arguments to
+operators.
+
+\subsubsection{Boolean Operators}
+\label{sec:boolean_ops}
+The Boolean operators \verb|&&| and \verb/||/
+and the ternary operator \verb|_?_:_| are evaluated ``left to right''
+with respect to \textbf{error}, and ``optimistically'' with respect to
+\textbf{undefined}.
+For example,
+\begin{tabbing}
+\hspace{2em}\=
+    \textbf{true} \verb/||/ $x$ = \textbf{true} \\
+    \> \textbf{false} \&\& $x$ = \textbf{false} \\
+    \> \textbf{undefined} \verb/||/ \textbf{true} = \textbf{true} \\
+    \> \textbf{true} \verb|?| $val$ \verb|:| $x$ = $val$ \\
+    \> \textbf{false} \verb|?| $x$ \verb|:| $val$ = $val$
+\end{tabbing}
+even if $x$ evaluates to \textbf{error} or \textbf{undefined}.
+
+The Boolean operators treat Boolean \textbf{true}, \textbf{false}, and
+\textbf{undefined} as a three-element lattice with
+\begin{quote}
+\textbf{false} \verb/</ \textbf{undefined} \verb/</ \textbf{true}.
+\end{quote}
+With respect to this lattice, \verb/&&/ returns the minimum of its operands,
+\verb/||/ returns the maximum, and \verb/!/ interchanges \textbf{true} and
+\textbf{false}.
+
+The complete definition of the operators \verb|&&|, \verb|&&|,
+\verb|!|, and \verb|_?_:_| is given by the tables
+\begin{verbatim}
+          && | F U T O    || | F U T O    ! |      ?:|
+          ---+--------    ---+--------    --+--   ---+---
+           F | F F F F     F | F U T E    F | T    F | expr3
+           U | F U U E     U | U U T E    U | U    U |  U
+           T | F U T E     T | T T T T    T | F    T | expr2
+           O | E E E E     O | E E E E    O | E    O |  E
+\end{verbatim}
+In these tables, the letters
+\verb|T|, \verb|F|, \verb|U|, and \verb|E|
+stand for the constants
+\textbf{true}, \textbf{false}, \textbf{undefined}, and \textbf{error},
+respectively; 
+\verb|O| stands for any expression other than 
+\textbf{true}, \textbf{false}, or
+\textbf{undefined} (including \textbf{error});
+and \verb|expr2| and \verb|expr3| represent the second and third operands of
+the expression $expr_1$ \verb|?| $expr_2$ \verb|:| $expr_3$.
+
+\subsubsection{\textbf{is} and \textbf{isnt}}
+\label{sec:is_isnt}
+The expression $expr_1$ \textbf{is} $expr_2$ evaluates to \textbf{true} if
+$expr_1$ and $expr_2$ evaluate to ``identical'' values and \textbf{false}
+otherwise.
+The expression $expr_1$ \textbf{isnt} $expr_2$ evaluates to the negation of
+$expr_1$ \textbf{is} $expr_2$.
+These operators are most commonly used to test for \textbf{undefined} or
+\textbf{error} as in
+\begin{verbatim}
+    result = (expr is undefined) ? 0 : (expr + 1);
+\end{verbatim}
+but they can be used to compare arbitrary values.
+
+For the purposes of this section, the relationship ``identical'' is defined as
+follows.
+\begin{itemize}
+\item Expressions of different types are never identical.
+    Thus \texttt{(3 is 3.0)} \texttt{(3 is "3")} and \texttt{(undefined is
+    error)} all evaluate to \textbf{false}.
+\item Two values of type Integer, Real, or RelTime are identical
+    if and only if they are numerically equal constants.
+\item Two values of type AbsTime are identical if they represent the same
+    instant in time and the same offset from UTC.
+\item Two values of type Boolean are identical if and only if they are both
+    \textbf{true} or both \textbf{false}.
+\item Two values of type Undefined or two values of type Error are identical.
+    Thus \texttt{((3 * "x") is error)} evaluates to \textbf{true}.
+\item Two values of type String are identical if and only if they are identical
+    character by character.  Case \emph{is} significant.
+    Thus \texttt{("One" == "one")} and \texttt{("One" isnt "one")}
+    both evaluate to \textbf{true}.
+\item Two values of type List or Record are identical if and only if they are
+    created by the same instance of a LIST or RECORD constructor operator.
+    For example, if \verb/R/ is the expression \begin{verbatim}
+        [ a = { 1, 2 }; b = { 1, 2 }; c = a is b; d = a is a ],\end{verbatim}
+    then \texttt{R.c} evaluates to \texttt{false}, while \texttt{R.d} evaluates
+    to \texttt{true}.
+\end{itemize}
+Note that the \textbf{is} and \textbf{isnt} operators always evaluate to
+\textbf{true} or \textbf{false}, never \textbf{undefined} or \textbf{error}.
+
+\subsubsection{Comparison Operators}
+For the six comparison operators
+\verb|<|, \verb|<=|, \verb|==|, \verb|!=|, \verb|>=|, and \verb|>|,
+both operands must be numeric (Integer or Real), both String, both AbsTime, or
+both RelTime.
+Otherwise, the result is \textbf{error}.
+If one operand is Integer and the other is Real, the Integer argument is
+first converted to Real.
+The results are calculated as in Java~\cite{JLS}.
+
+If the operands are Strings, they are converted to lower case and compared
+lexicographically.
+
+If the operands are AbsTimes, they are equal if they correspond to the same
+instant (according to UTC).  Otherwise, the earlier time is less than the
+later one.  If the operands are RelTimes, they are compared as signed integers.
+
+\subsubsection{Arithmetic Operators}
+The unary operators
+\verb|+|,
+\verb|-|,
+and binary operators
+\verb|+|,
+\verb|-|,
+\verb|*|,
+\verb|/|,
+\verb|%|,
+take numeric operands.\footnote{Unlike Java, the \texttt{+} operator is not
+overloaded to accept String operands.}
+The results are calculated as in Java~\cite{JLS},\footnote{The
+\texttt{\%} operator is defined for floating point operands according to the
+Java programming language specification, not according C.
+Some C implementations may not support \texttt{\%} with floating point operands,
+so users concerned with portability should avoid this special case until all
+implementations are brought into compliance.}
+with one exception:
+Integer division or
+remainder when the second operand is zero throws an ArithmeticException in
+Java, but returns \textbf{error} in the ClassAd language.
+In particular, if operands are Integers, the result is an Integer, and if one
+operand of a binary operation is an Integer and the other is a Real, the
+Integer operand is converted to a Real and the result is computed using 64-bit
+floating point arithmetic.
+The integral \verb|/| operation truncates the result towards zero, and the
+integral \verb|%| operation generally returns a result with the same sign as
+the dividend (the left operand).
+See the Java language specification~\cite{JLS} for details.
+
+The unary and binary operators \verb|+| and \verb|-| are also defined for
+certain timestamp operands.
+The unary \verb|+| operator is applicable to both AbsTime and RelTime operands
+and returns the value of its operand unchanged.
+The unary \verb|-| operator is applicable only to RelTime operands and returns
+the RelTime value with the same magnitude and opposite sign.
+
+The rules for binary operators are summarized in Table~\ref{tab:datearith}.
+If the result of an expression is an AbsTime, its time zone is the same as
+the time zone of the AbsTime argument.
+\begin{table}[ht]
+\begin{center}
+\begin{tabular}{llp{4in}}
+\emph{Expression} & \emph{Result type} & \emph{Result value} \\ \hline
+AbsTime \verb|+| AbsTime & \textbf{error} \\
+AbsTime \verb|+| RelTime & AbsTime & The AbsTime operand offset by the amount
+                        of the RelTime operand \\
+RelTime \verb|+| AbsTime & AbsTime & The AbsTime operand offset by the amount
+                        of the RelTime operand \\
+RelTime \verb|+| RelTime & RelTime & The numeric sum of the two operands \\
+
+AbsTime \verb|-| AbsTime & RelTime & The numeric difference
+                        of the two operands \\
+AbsTime \verb|-| RelTime & AbsTime & The AbsTime operand offset by the negative
+                        of the RelTime operand \\
+RelTime \verb|-| AbsTime & \textbf{error} \\
+RelTime \verb|-| RelTime & RelTime & The numeric difference of the two operands
+\end{tabular}
+\end{center}
+\caption{Date and Time Arithmetic}
+\label{tab:datearith}
+\end{table}
+
+\subsubsection{Bitwise Boolean Operators}
+The bitwise logical unary operator \verb|~| and binary operators
+\verb/|/,
+\verb|^|, and
+\verb|&| are defined only for Integer and Boolean operands.
+They are defined to return the same results as the corresponding operators in
+Java~\cite{JLS}.
+
+\subsubsection{Shift Operators}
+The shift operators
+\verb/<</ (left shift),
+\verb|>>| (right shift with sign extension), and
+\verb|>>>| (right shift with zero fill) are defined only for Integer
+operands.\footnote{Note that C and C++ have no \texttt{>>>} operator.  These
+languages perform a similar operation when the operands are declared to be
+unsigned.
+There are no unsigned types in Java or the ClassAd language.}
+They are defined to return the same results as the corresponding operators in
+Java~\cite{JLS}.
+
+\subsubsection{Select and Subscript}
+The SELECT operator has two operands, the \emph{base} and the \emph{selector},
+where the selector is syntactically constrained to be an attribute name.
+In the native syntax, it is written \emph{base}\verb|.|\emph{selector}.
+It is semantically equivalent to \emph{base}\verb/["/\emph{selector}\verb/"]/.
+That is, an instance of SUBSCRIPT operator where the \emph{subscript} is
+the string value corresponding to the attribute name.
+For example,
+\begin{verbatim}    [ rec = [ One = 1; Two = 2 ]; val = rec.one ].val\end{verbatim}
+and
+\begin{verbatim}    [ rec = [ One = 1; Two = 2 ]; val = rec["one"] ].val\end{verbatim}
+both evaluate to \verb/1/.
+The SELECT syntax is more concise, but the SUBSCRIPT syntax is more flexible,
+because it allows the selector to be computed rather than requiring a literal
+string.
+
+% cases
+% [a=x] sub "a" => x
+% {e,...} sub "a" => {e sub "a", ...}
+% {e1,...} sub i => ei
+The SUBSCRIPT operator has two operands, the \emph{base} and the
+\emph{subscript}.
+In the native syntax, it is written
+\emph{base}\verb|[|\emph{subscript}\verb|]|.
+The subscript expression must have type Integer or String.
+If the subscript is an Integer $i$, the base expression must have type List and
+the result is the $i^{th}$ element of the list, counting from zero.
+If the subscript is a String $s$, the base expression must be a
+Record or List.  If the base expression has type Record,
+the result is computed by searching the base and its containing scopes for an
+attribute definition matching the attribute name $s$.
+If the base expression is a List, the SUBSCRIPT operator is applied to
+each member of the list and the result is a new ``top-level'' list of the
+results.
+In all other cases, the result is \textbf{error}.
+
+More precisely,
+\[ eval(E_b[E_s], C)  = (E', C'), \]
+where $E'$ and $C'$ are defined as follows.
+Let
+\[ eval(E_b, C) = (E_b', C_b') \] and
+\[ eval(E_s, C) = (E_s', C_s'). \]
+\begin{itemize}
+\item 
+If $E_s'$ is an Integer with value $i$ and $E_b'$ is a list
+$\{ E_0, ..., E_{n - 1}\}$ with $n > i$ members,
+then $(E', C') = (E_i, C_b')$.
+\item
+If $E_s'$ is a String with value $s$ and $E_b'$ is a Record expression,
+then $(E', C') = \mathit{eval}(\mathit{lookup}(s, (E_b', C_b')))$.
+\item
+If $C_2$ is a String with value $s$ and $E_b'$ is a list
+$\{ E_0, ..., E_{n - 1}\}$, then $E'$ is the list
+$\{ E_0', ..., E_{n - 1}'\}$, where $\mathit{eval}(E_i[s], C_b') = (E_i', C_i')$
+and $C' = E'$ (that is, the result is a ``top-level'' EIC).
+Note that the environments $C_i'$ returned by the recursive calls to
+\emph{eval} are discarded.
+\item
+In all other cases, the result is \textbf{error}.
+\end{itemize}
+
+\subsubsection{List and Record Constructors}
+\label{sec:list_and_record}
+The LIST operator takes as operands an arbitrary sequence of values of
+arbitrary types.
+The RECORD operator takes as operands a sequence of definitions of the form
+$name_i = value_i$, where the $value_i$ are arbitrary values.  The result is
+the Record
+\begin{center}
+\verb|[|$name_0 = value_0;~...~;~name_{n-1} = value_{n-1}$\verb|]|
+\end{center}
+
+List and Record expressions evaluate to themselves.
+That is, \emph{eval(E, C) = (E, C)} if $E$ is of type List or Record.
+
+\subsubsection{Function Calls}
+\label{sec:functions}
+The FUNC\_CALL operator takes a function name and zero or more operands.
+Function names are matched regardless of case, so that
+\texttt{substr("abc",2)},
+\texttt{SubStr("abc",2)}, and
+\texttt{SUBSTR("abc",2)} all invoke the same function.
+
+Currently, all functions are \emph{strict} with respect to \textbf{error}
+and \textbf{undefined}, unless otherwise specified.
+In other words, all arguments are evaluated, and
+if any argument evaluates to
+\textbf{error} or \textbf{undefined}, the result is
+\textbf{error} or \textbf{undefined}, respectively.
+If arguments of both types are present, the result is \textbf{error}.
+
+Currently, all functions return ``top-level'' values that are independent
+of the the context of the call.  That is
+$\mathit{eval}(f(E_1,...,E_n), C) = (V, V)$, where
+$\mathit{eval}(E_i, C) = E_i'$ for $i = 1,...,n$ and $V$ is a value
+computed from $E_1', ...,  E_n'$ as described in the following table.
+
+The following table lists all functions required by the current version of this
+specification; others may be added in future versions.
+The description of each function is preceded by a prototype indicating
+restrictions on the number and types of arguments and indicating the type of
+the result returned.
+If the restrictions are violated, the result is \textbf{error}.
+In the prototypes, ``const'' stands for any literal constant of type Integer,
+Real, String, Boolean, AbsTime, or RelTime (but not Undefined, Error, List, or
+Record), and ``any'' means any expression.
+A type followed by an asterisk indicates any number
+of arguments of the indicated type, including none.
+Square brackets are used to indicate optional arguments.
+
+\begin{description}
+
+\item[\textbf{isUndefined}(\emph{any a}) \textbf{returns} \emph{boolean}.]
+Returns \textbf{true} if \emph{a} is the undefined value, otherwise
+returns \textbf{false}.
+This function is not strict.
+
+\item[\textbf{isError}(\emph{any a}) \textbf{returns} \emph{boolean}.]
+Returns \textbf{true} if \emph{a} is the error value, otherwise
+returns \textbf{false}.
+This function is not strict.
+
+\item[\textbf{isString}(\emph{any a}) \textbf{returns} \emph{boolean}.]
+Returns \textbf{true} if \emph{a} is a string value, otherwise
+returns \textbf{false}.
+This function is not strict.
+
+\item[\textbf{isInteger}(\emph{any a}) \textbf{returns} \emph{boolean}.]
+Returns \textbf{true} if \emph{a} is an integer value, otherwise
+returns \textbf{false}.
+This function is not strict.
+
+\item[\textbf{isReal}(\emph{any a}) \textbf{returns} \emph{boolean}.]
+Returns \textbf{true} if \emph{a} is a real value, otherwise
+returns \textbf{false}.
+This function is not strict.
+
+\item[\textbf{isList}(\emph{any a}) \textbf{returns} \emph{boolean}.]
+Returns \textbf{true} if \emph{a} is a list value, otherwise
+returns \textbf{false}.
+This function is not strict.
+
+\item[\textbf{isClassad}(\emph{any a}) \textbf{returns} \emph{boolean}.]
+Returns \textbf{true} if \emph{a} is a record value, otherwise
+returns \textbf{false}.
+This function is not strict.
+
+\item[\textbf{isBoolean}(\emph{any a}) \textbf{returns} \emph{boolean}.]
+Returns \textbf{true} if \emph{a} is a boolean value, otherwise
+returns \textbf{false}.
+This function is not strict.
+
+\item[\textbf{isAbstime}(\emph{any a}) \textbf{returns} \emph{boolean}.]
+Returns \textbf{true} if \emph{a} is an AbsTime value, otherwise
+returns \textbf{false}.
+This function is not strict.
+
+\item[\textbf{isReltime}(\emph{any a}) \textbf{returns} \emph{boolean}.]
+Returns \textbf{true} if \emph{a} is a RelTime value, otherwise
+returns \textbf{false}.
+This function is not strict.
+
+\item[\textbf{int}(\emph{const x}) \textbf{returns} \emph{int}.]
+
+The result is \emph{x} converted to an Integer.
+If \emph{x} is an Integer, the result is \emph{x}.
+If \emph{x} is a Real, it is truncated (towards zero) to an Integer.
+If \emph{x} is \textbf{true} the result is 1.
+If \emph{x} is \textbf{false} the result is 0.
+If \emph{x} is an AbsTime, it it converted to the number of seconds since the
+epoch, UTC.
+If \emph{x} is a RelTime, it it converted to a number of seconds.
+If \emph{x} is a String, it is parsed according to the native syntax
+for \emph{integer\_literal} or \emph{floating\_point\_literal} as in
+Table~\ref{tab:tokens} and then converted to an Integer as above.
+If \emph{x} is a String that does not represent a valid Integer or
+floating-point literal, the result is \textbf{error}.
+
+\item[\textbf{real}(\emph{const x}) \textbf{returns} \emph{real}.]
+
+The result is \emph{x} converted to a Real.
+If \emph{x} is a Real, the result is \emph{x}.
+If \emph{x} is an Integer, it is converted to Real.
+If \emph{x} is \textbf{true} the result is 1.0.
+If \emph{x} is \textbf{false} the result is 0.0.
+If \emph{x} is an AbsTime, it it converted to the number of seconds since the
+epoch, UTC.
+If \emph{x} is a RelTime, it it converted to a number of seconds.
+If \emph{x} is a String, it is parsed according to the native syntax
+for \emph{integer\_literal} or \emph{floating\_point\_literal} as in
+Table~\ref{tab:tokens} and then converted to a Real as above.
+In addition, the strings \textbf{INF}, \textbf{-INF} and \textbf{NaN}
+(in any combination of upper and lower case) are recognized as representing
+the IEEE754 values for positive and negative infinity and not-a-number,
+respectively.
+If \emph{x} is a String that does not represent a valid Integer or
+floating-point literal, the result is \textbf{error}.
+For any other type, \emph{x} is converted to an Integer as if by ``int'', and
+the result is converted to a Real (or \textbf{error} if the conversion to
+Integer fails).
+
+\item[\textbf{string}(\emph{any x}) \textbf{returns} \emph{string}.]
+
+If \emph{x} is a String, the result is \emph{x}.
+Otherwise, the result is the canonical unparsing of \emph{x} (see
+Section~\ref{sec:unparsing}).
+
+\item[\textbf{floor}(\emph{const x}) \textbf{returns} \emph{int}.]
+
+If \emph{x} is an Integer, the result is \emph{x}.
+Otherwise, \emph{x} is converted to a Real by the function ``real'' above,
+and the result is the largest Integer not greater than that value (or
+\textbf{error} if the conversion fails).
+
+\item[\textbf{ceiling}(\emph{const x}) \textbf{returns} \emph{int}.]
+
+If \emph{x} is an Integer, the result is \emph{x}.
+Otherwise, \emph{x} is converted to a Real by the function ``real'' above,
+and the result is the smallest Integer not less than that value (or
+\textbf{error} if the conversion fails).
+
+\item[\textbf{round}(\emph{const x}) \textbf{returns} \emph{int}.]
+
+If \emph{x} is an Integer, the result is \emph{x}.
+Otherwise, \emph{x} is converted to a Real \emph{y} by the function ``real''
+above, and the result is the nearest Integer to \emph{y}.  If \emph{y} is
+midway between two Integers, the even Integer is returned.  The result is
+\textbf{error} if the conversion fails or the resulting integral value does not
+fit in 32 bits.
+
+\item[\textbf{random}({[} \emph{number x} {]}) \textbf{returns} \emph{int}.]
+
+If \emph{x} is a positive Integer, the result is a random Integer $r$ uniformly
+chosen from the range $0 \le r < x$.  If \emph{x} is a positive Real number, the
+result is a random Real uniformly chosen from the same range.   If \emph{x} is
+omitted, the result is the same as \emph{random(1.0)}.  If \emph{x} is anything
+else, the result is an error.
+
+\item[\textbf{strcat}(\emph{any*}) \textbf{returns} \emph{string}.]
+
+Each argument is converted to a String by the
+function ``string'' above.  The result is the concatenation of the strings.
+
+\item[\textbf{substr}(\emph{string s}, \emph{int offset}
+{[}, \emph{int length} {]}) \textbf{returns} \emph{string}.]
+The result is the substring of $s$ starting
+at the position indicated by \emph{offset} with the length indicated by
+\emph{length}.
+The first character of $s$ is at offset 0.
+If \emph{offset} is negative, it is replaced by length($s$) -- \emph{offset}.
+If \emph{length} is omitted, the substring
+extends to the end of $s$.  If \emph{length} is negative, an intermediate 
+result is computed as if length were omitted, and then \emph{--length}
+characters are deleted from the right end of the result.
+If the resulting substring lies partially
+outside the limits of $s$, the part that lies within $s$ is returned.
+If the substring lies entirely outside $s$ or has negative length (because
+of a negative \emph{length} argument), the result is the null string.
+[\textbf{Note}:  This function is the same as the \texttt{substr} function
+of Perl.]
+
+\item[\textbf{strcmp}(\emph{any a}, \emph{any b}) \textbf{returns} \emph{int}.]
+The operands are converted to Strings by the ``string''
+function above.  The result is an Integer less than, equal to, or greater than
+zero according to whether $a$ is lexicographically less than,
+equal to, or greater than $b$.
+Note that case \emph{is} significant in the comparison.
+
+\item[\textbf{stricmp}(\emph{any a}, \emph{any b}) \textbf{returns} \emph{int}.]
+
+The same as \textbf{strcmp} except that upper and lower case letters are
+considered equivalent.
+
+\item[\textbf{toUpper}(\emph{string s}) \textbf{returns} \emph{string}.]
+
+The operand is converted to a String by the ``string'' function above. The
+result is a String that is identical to \emph{s} except that all lowercase
+letters in \emph{s} are converted to uppercase.
+
+\item[\textbf{toLower}(\emph{string s}) \textbf{returns} \emph{string}.]
+
+The operand is converted to a String by the ``string'' function above. The
+result is a String that is identical to \emph{s} except that all uppercase
+letters in \emph{s} are converted to lowercase.
+
+\item[\textbf{size}(\emph{string s}) \textbf{returns} \emph{int}.]
+Returns the number of characters of the string s.
+
+\item[\textbf{size}(\emph{list l}) \textbf{returns} \emph{int}.]
+Returns the number of elements in the list l.
+
+\item[\textbf{size}(\emph{classad c}) \textbf{returns} \emph{int}.]
+Returns the number of attributes in the classad c.
+
+\item[\textbf{sum}(\emph{list l}) \textbf{returns} \emph{number}.]
+The elements of $l$ are evaluated, producing a list $l'$ of values.
+If $l'$ is composed only of numbers, the result is the sum of the values,
+as a Real if any value is Real, and as an Integer otherwise.
+If the list is empty, the result is 0. In other cases, the result is ERROR.
+
+\item[\textbf{avg}(\emph{list l}) \textbf{returns} \emph{number}.]  
+The elements of $l$ are evaluated, producing a list $l'$ of values.
+If $l'$ is composed only of numbers, the result is the average of the values,
+as a Real.  If the list is empty, the result is 0. In other cases, the result
+is ERROR.
+
+\item[\textbf{min}(\emph{list l}) \textbf{returns} \emph{number}.]  
+The elements of $l$ are evaluated, producing a list $l'$ of values.
+If $l'$ is composed only of numbers, the result is the minimum of the values,
+as a Real if any value is Real, and as an Integer otherwise.
+If the list is empty, the result is UNDEFINED. In other cases, the result is
+ERROR.
+
+\item[\textbf{max}(\emph{list l}) \textbf{returns} \emph{number}.]  
+The elements of $l$ are evaluated, producing a list $l'$ of values.
+If $l'$ is composed only of numbers, the result is the maximum of the values,
+as a Real if any value is Real, and as an Integer otherwise.
+If the list is empty, the result is UNDEFINED. In other cases, the result is
+ERROR.
+
+\item[\textbf{member}(\emph{const x}, \emph{string l})
+\textbf{returns} \emph{boolean}.]
+
+If \emph{x} is not a constant or \emph{l} is not a list, then the
+result is an error.  Otherwise, the elements of $l$ are evaluated and if any of
+the values are equal to \emph{x} in the sense of the \verb@==@ operator, then
+the result is \textbf{true}, otherwise it is \textbf{false}.
+
+\item[\textbf{identicalMember}(\emph{const x}, \emph{string l})
+\textbf{returns} \emph{boolean}.]
+
+If \emph{x} is not a constant or \emph{l} is not a list, then the
+result is an error.  Otherwise, the elements of $l$ are evaluated and if any of
+the values are equal to \emph{x} in the sense of the \verb@is@ operator, then
+the result is \textbf{true}, otherwise it is \textbf{false}.
+
+\item[\textbf{regexp}(\emph{string pattern}, \emph{string target}
+{[}, \emph{string options} {]}) \textbf{returns} \emph{boolean}.]
+
+If any of the arguments is not of type String or if \emph{pattern} is not a
+valid regular expresison, the result is an error.  Otherwise, if \emph{pattern}
+matches \emph{target}, the result is \textbf{true}, otherwise it is
+\textbf{false}.
+
+The details of the syntax and semantics of the regular expressions supported
+currently depends on the implementation.  The Java implementation as of Version
+2.2 supports perl-compatible regular expressions with certain minor differences
+as documented by the Java 1.4 documentation at
+\begin{verbatim}    http://java.sun.com/j2se/1.4.2/docs/api/java/util/regex/Pattern.html.  \end{verbatim}
+The C++ release as of Version 0.9.7 and later support as a build-time option either
+perl-compatible regular expressions as supported by the pcre library
+(see \verb|http://www.pcre.org/|) or POSIX regular expressions
+\begin{verbatim}    http://www.opengroup.org/onlinepubs/007908799/xbd/re.html\end{verbatim}
+as implemented by the GNU \verb|regex| library
+\begin{verbatim}    http://www.gnu.org/software/libc/manual/html_node/Regular-Expressions.html.\end{verbatim}
+
+The \emph{options} argument, if present, may contain the following characters
+to alter the exact details.   Unrecognized options are silently ignored.
+Only \verb|i| and \verb|I| are supported by the POSIX version.
+
+\begin{description}
+
+\item[\textbf{i} or \textbf{I}]
+\mbox{}
+
+Ignore case.
+
+\item[\textbf{m} or \textbf{M}]
+\mbox{}
+
+Multi-line:  A carat (\verb|^|) matches not only the start of the subject
+string, but also after each newline.  Similarly, dollar (\verb|$|) matches
+before a newline.
+%$  (This comment fixes my broken syntax highlighting that began with
+%    the dollar sign)
+\item[\textbf{s} or \textbf{S}]
+\mbox{}
+
+Single-line:  Dot (\verb|.|) matches any character, including newline.
+
+\item[\textbf{x} or \textbf{X}]
+\mbox{}
+
+Extended:  Whitespace and comments (from \verb|#| to the next newline) in
+the pattern are ignored.
+
+\end{description}
+
+\item[\textbf{regexpMember}(\emph{string pattern}, \emph{string l},
+{[}, \emph{string options} {]}) \textbf{returns} \emph{boolean}.]
+
+If \emph{x} is not a constant or \emph{l} is not a list, then the
+result is an error.  Otherwise, the elements of $l$ are evaluated and if any of
+them evaluates to anything other than a String, the result is an error.
+Otherwise, if any of values in the list matches the pattern according to
+the \emph{regexp} function, the result is \textbf{true}.   If there is no match,
+then the result is \textbf{false}.
+
+\item[\textbf{anycompare}(\emph{string s}, \emph{list l}, \emph{const t}) 
+\textbf{returns} \emph{boolean}.]  
+\item[\textbf{allcompare}(\emph{string s}, \emph{list l}, \emph{const t}) 
+\textbf{returns} \emph{boolean}.]  
+If $s$ is not a string equal (ignoring case) to one of
+``\verb@<@'', ``\verb@<=@'',
+``\verb@==@'', ``\verb@>@'', ``\verb@>=@'', ``\verb@!=@'', ``is'', or
+``isnt'' or $l$ is not a list, the result is an error.  Otherwise, the
+elements of $l$ are evaluated and compared to $t$ using the ClassAd operator
+corresponding to $s$.  If any of the comparisons evaluate to \textbf{true} in
+the case of \emph{anycompare} or all of the comparisons evaluate to
+\textbf{true} in the case of \emph{allcompare}, the result is \textbf{true}.
+Otherwise, the result is \textbf{false}.
+
+\item[\textbf{time}() \textbf{returns} \emph{int}.]
+
+Returns the current Coordinated Universal Time, in seconds
+since midnight January 1, 1970.
+
+\item[\textbf{interval}(\emph{int t}) \textbf{returns} \emph{string}.]
+
+The operand \emph{t} is treated as a number of seconds.
+The result is a String of the form \texttt{days+hh:mm:ss}.
+Leading components are omitted if they are zero.  For example, if the
+operand is $1472523 = 17*24*60*60 + 1*60*60 + 2*60 + 3$
+(seventeen days, one hour, two
+minutes, and three seconds), the result is \texttt{"17+1:02:03"};
+if the operand is 67, the result is \texttt{"1:07"}.
+
+\item[\textbf{absTime}(\emph{string s}) \textbf{returns} \emph{AbsTime}.]
+
+The operand $s$ is parsed as a specification of an instant in time (date and
+time). 
+This function accepts the canonical native representation of AbsTime values,
+but minor variations in format are allowed.
+
+The default format is \verb/yyyy-mm-ddThh:mm:sszzzzz/ where zzzzz is a time
+zone in the format \verb/+hh:mm/ or \verb/-hh:mm/, but variations are allowed.
+\begin{itemize}
+\item Each separator character \verb/-/, \verb/:/, or \verb/T/  may be omitted
+or replaced by any sequence of non-digits.  Note, however, that the
+\verb/-/ in a time zone of the form \verb/-hh:mm/ may not be omitted.
+\item The colon between \verb/hh/ and \verb/mm/ in the time zone may be omitted.
+\item An arbitrary sequence of non-digit characters may precede \verb/zzzzz/
+or \verb/yyyy/.
+\item The zone may be replaced by the character \verb/z/ or \verb/Z/, which is
+equivalent to \verb/-00:00/.
+\item The zone may be omitted, in which case the local time zone is used.
+If the string ends with \verb/+dddd/, \verb/-dddd/, \verb/z/, or
+\verb/Z/, where each \verb/d/ is a digit, this suffix is considered to be
+the time zone indication.  For example, in \verb/2003+1030/, the suffix
+\verb/1030/ is interpreted as a time zone 10 hours and 30 minutes east,
+rather than as October 30.
+\item The fields \verb/ss/, \verb/mm/, \verb/hh/, etc. may be omitted (from
+right to left), in which case the omitted fields are assumed to be zero.
+\end{itemize}
+More precisely, the string must match the regular expression
+\begin{verbatim}
+    D* dddd [D* dd [D* dd [D* dd [D* dd [D* dd D*]]]]] [-dd[:]dd|+dd[:]dd|z|Z]
+\end{verbatim}
+Where \verb/d/ stands for a digit and \verb/D/ stands for a non-digit.
+
+For example, in the United States central time zone, an AbsTime
+corresponding to ``9 am Jan 25, 2003 CST'' may be created by any of the
+function calls
+
+\begin{tabular}{ll}
+\verb/2003-01-25T09:00:00-06:00/ & // canonical \\
+\verb/2003-01-25   09:00:00 -0600/ & // different separators \\
+\verb/20030125090000-0600/       & // compact format \\
+\verb/2003-01-25 16:00:00 +01:00/ & // different time zone \\
+\verb/2003-01-25 15:00Z/         & // omitted seconds, UTC time zone \\
+\verb/2003-01-25 09:00:00/       & // default time zone (local) \\
+\verb/2003-01-25 09/             & // omitted minutes and seconds 
+\end{tabular}
+
+and AbsTimes corresponding to ``Jan 25, 2003'' (implicitly midnight, UTC) may
+be written
+
+\begin{tabular}{ll}
+\verb/2003-01-24T18:00:00-06:00/ & // canonical \\
+\verb/2003-01-25T00:00:00/       & // default time zone: UTC \\
+\verb/2003-01-25/                & // omitted time of day \\
+\verb|2003/01/25|                & // different separators \\
+\verb/20030125/                  & // compact format
+\end{tabular}
+
+The strings \verb/2003-01-25T09:00:00-06:00/ and \verb/2003-01-25 15:00Z/
+represent the same instant in time, but measured in different time zones.
+
+The following strings are invalid.
+
+\begin{tabular}{ll}
+\verb/2003-01-25T09:00:00-06/    & // incomplete time zone \\
+\verb/2003-01-25T09:00:00- 0600/ & // space in time zone \\
+\verb/2003-1-25/                 & // missing digit in dd field
+\end{tabular}
+
+%stopzone
+
+\item[\textbf{absTime}({[} \emph{const t} {[}, \emph{int z}{]}{]})
+\textbf{returns} \emph{AbsTime}.]
+
+Creates an AbsTime value corresponding to time $t$ an time-zone offset $z$.
+If $t$ is a String, then $z$ must be omitted, and $t$ is parsed as a
+specification as described above.  If $t$ and $z$ are both omitted, the
+result is an AbsTime value representing the time and place where the function
+call is evaluated.
+Otherwise, $t$ is converted to a Real by the function ``real'' above,
+and treated as a number of seconds from the epoch, Midnight January 1, 1970
+UTC.  If $z$ is specified, it is treated as a number of seconds \emph{east}
+of Greenwich.  Otherwise, the offset is calculated from $t$ according to
+the local rules for the place where the function is evaluated.
+
+% \item[\textbf{absTime}({[]\emph{const t}{[], \emph{int z}[}}])
+\item[\textbf{relTime}(\emph{const t}) \textbf{returns} \emph{RelTime}.]
+% \item[\textbf{relTime}(\emph{const s}) \textbf{returns} \emph{RelTime}.]
+
+If the operand $t$ is a String, it is parsed as a specification of a time
+interval.  This function accepts the canonical native representation of RelTime
+values, but minor variations in format are allowed.
+
+Otherwise, $t$ is converted to a Real by the function ``real'' above,
+and treated as a number of seconds.
+
+The default string format is \verb/[-]days+hh:mm:ss.fff/, where
+leading components and the fraction \verb/.fff/ are omitted if they are zero.
+In the default syntax, days is a sequence of digits starting with a
+non-zero digit, \verb/hh/, \verb/mm/, and \verb/ss/ are strings of exactly two
+digits (padded on the left with zeros if necessary) with values less than 24,
+60, and 60, respectively and \verb/fff/ is a string of exactly three digits.
+In the relaxed syntax,
+
+\begin{itemize}
+\item Whitespace may be added anywhere except inside the numeric fields
+\verb/days/, \verb/hh/, etc.
+\item Numeric fields may have any number of digits and any non-negative value.
+\item The \verb/+/ may be replaced by \verb/d/ or \verb/D/.
+\item The first \verb/:/ may be replaced by \verb/h/ or \verb/H/.
+\item The second \verb/:/ may be replaced by \verb/m/ or \verb/M/.
+\item The letter \verb/s/ or \verb/S/ may follow the last numeric field.
+\item If field $i$ is terminated with one of the letters \verb/dDhHmMsS/ and
+the value of field $i-1$ is zero, field $i-1$, together with its
+terminating field name (\verb/+/, \verb/:/, \verb/h/, etc.) may be omitted even
+if field $i-2$ is not omitted.
+\item The fraction \verb/.fff/ may have any number of digits.  If it has no
+digits, the preceding decimal point may be omitted.
+\end{itemize}
+
+For example, one day, two minutes and three milliseconds may have any of
+the forms
+
+\begin{tabular}{ll}
+\verb/1+00:02:00.003/      & // the result of relTimeToString \\
+\verb/1d0h2m0.003s/        & // similar to ISO 8601 \\
+\verb/1d 2m 0.003s/        & // add spaces, omit hours field \\
+\verb/1d 00:02:00.003/     & // mixed representations \\
+\verb/1d 00:00:120.003/    & // number of seconds greater than 59 \\
+\verb/86520.002991/        & // seconds, excess precision in fraction
+\end{tabular}
+
+\item[\textbf{splitTime}(\emph{RelTime}) \textbf{returns} \emph{ClassAd}.]
+
+Creates a ClassAd with each component of the time as an element of the
+ClassAd. The ClassAd has five attributes:
+
+\begin{tabular}{ll}
+\verb/Type/     & // ``RelativeTime''      \\
+\verb/Days/     & // the number of days    \\
+\verb/Hours/    & // the number hours      \\
+\verb/Minutes/  & // the number of minutes \\
+\verb/Seconds/  & // the number of seconds \\
+\end{tabular}
+
+\item[\textbf{splitTime}(\emph{AbsTime}) \textbf{returns} \emph{ClassAd}.]
+
+Creates a ClassAd with each component of the time as an element of the
+ClassAd. The ClassAd has five attributes:
+
+\begin{tabular}{ll}
+\verb/Type/     & // ``AbsoluteTime''      \\
+\verb/Year/     & // the year              \\
+\verb/Month/    & // the month, from 1 (January) through 12 (December) \\
+\verb/Day/      & // the day, from 1 through 31 \\
+\verb/Hours/    & // the number of hours   \\
+\verb/Minutes/  & // the number of minutes \\
+\verb/Seconds/  & // the number of seconds \\
+\verb/Offset/   & // the timezone offset in seconds   \\
+\end{tabular}
+
+\item[\textbf{formatTime}(\emph{AbsTime t}, \emph{string s})
+\textbf{returns} \emph{string}.]
+
+This function creates a formatted String that is a representation of
+the absolute time \emph{t}. 
+
+The argument \emph{s} is interpreted similarly to the \emph{format} argument of
+the ANSI C strftime function. It consists of arbitary text plus placeholders
+for elements of the time. These placeholders are percent signs (\%) followed by
+a single letter. To have a percent sign in your output, you must use a double
+percent sign (\%\%). 
+
+Because an implementation may use strftime() to implement this, and
+some versions implement extra, non-ANSI C options, the exact options
+available to an implementation may vary. An implementation is only
+required to implement the ANSI C options, which are:
+
+\begin{tabular}{ll}
+\%a & // abbreviated weekday name \\
+\%A & // full weekday name \\
+\%b & // abbreviated month name \\
+\%B & // full month name \\
+\%c & // local date and time representation\\
+\%d & // day of the month (01-31)\\
+\%H & // hour in the 24-hour clock (0-23)\\
+\%I & // hour in the 12-hour clock (01-12)\\
+\%j & // day of the year (001-366)\\
+\%m & // month (01-12)\\
+\%M & // minute (00-59)\\
+\%p & // local equivalent of AM or PM\\
+\%S & // second (00-59)\\
+\%U & // week number of the year (Sunday as first day of week) (00-53)\\
+\%w & // weekday (0-6, Sunday is 0)\\
+\%W & // week number of the year (Monday as first day of week) (00-53)\\
+\%x & // local date representation\\
+\%X & // local time representation\\
+\%y & // year without century (00-99)\\
+\%Y & // year with century\\
+\%Z & // time zone name, if any\\
+\% & // \%\\
+\end{tabular}
+
+Note that names may be locale-dependent, if the underlying operating
+system supports locales. Also note that some ClassAd implementations
+may have difficulty with time zone names for non-local time zones,
+since the names may vary.
+
+\item[\textbf{formatTime}(\emph{int i}, \emph{string s})
+\textbf{returns} \emph{string}.]
+
+This version of formatTime converts \emph{i} to an absolute time, then
+behaves identically to the other version of formatTime.
+
+%stopzone
+
+\end{description}
+
+\section{Acknowledgments}
+
+The ClassAd language was originally developed by Wieru Cai, Miron Livny, and
+James Pryne as part of the Condor~\cite{CONDOR_HOME,CONDOR_EXP,CONDOR_HUNT}
+project at the University of Wisconsin---Madison~\cite{CLASSAD_ALPHA}.
+Under the leadership of Rajesh Raman, the language was made substantially more
+powerful (including such features as lists, arbitrary nesting of lists and
+records, and the Boolean, AbsTime and RelTime data types), while at the
+same time, the specification was made substantially simpler and more regular.
+In particular, the specification of the language was separated from details
+of its use in Condor.
+See Raman's Ph. D. dissertation~\cite{RAMAN_THESIS} for a more readable
+introduction to the language and its design goals and a discussion of
+implementation issues, and a related conference paper~\cite{HPDC} for a
+discussion of the use of ClassAds and Matchmaking in resource allocation.
+Raman is also the author of the current C++ implementation.
+Marvin Solomon is the author of the Java implementation.
+
+Currently, the language is being maintained and developed by Alain Roy and
+Marvin Solomon, with input from other members of the Condor team.
+For the latest information about ClassAds, please see the ClassAd home
+page~\cite{CLASSAD_HOME}.
+
+\bibliographystyle{plain}
+\bibliography{refman} 
+
+\appendix
+\section{YACC Grammar}
+\label{sec:yacc}
+\input{grammar.tex}
+
+\section{XML Document Type Definition (DTD)}
+\label{sec:dtd}
+\input{dtd.tex}
+
+\section{XML Schema}
+\label{sec:schema}
+\input{schema.tex}
+
+\end{document}

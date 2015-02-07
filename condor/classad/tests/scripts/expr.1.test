@@ -1,0 +1,192 @@
+// Various tests to verify the evaluation of expressions, part 1:
+//    Constants, operators, and precedence.
+
+// Simple constants of all types
+[ comment="answer should be 3"; value=3 ];
+[ comment="answer should be 3.1416"; value=31416e-4 ];
+[ comment="answer should be .001"; value=1e-3 ];
+[ comment="answer should be .0001; note that we choose to use E notation";
+    value=1e-4 ];
+[ comment="A string containing various special characters";
+    value="newline=\n backslash=\\ tab=\t ctl-a=\1 quot \" apos \' lt <" ];
+[ comment="A string containing various special characters in an expression";
+    value="newline=\n backslash=\\ tab=\t ctl-a=\1 quot \" apos \' lt <" != ""];
+[ comment="Explicit UNDEFINED"; value = Undefined ];
+[ comment="Explicit ERROR"; value = ERROR ];
+[ comment="answer should be true"; value = true ];
+[ comment="answer should be false"; value = false ];
+[ comment="quoted attribute"; value = 'quoted'; quoted = "good" ];
+[ comment="quoted attribute"; value = quoted; 'quoted' = "good" ];
+[ comment="quoted attribute"; value = quoted; '\161uoted' = "good" ];
+[ comment="An attribute name containing various special characters";
+    value = 'apos \' quot \" lt <';
+    'apos \' quot \" lt <' = "good" ];
+
+// Tests of operators
+
+[ value = "UNARY OPERATORS" ];
+[ value = +5 ];
+[ value = -5 ];
+[ value = ~5 ];
+[ value = !true ];
+[ value = !false ];
+[ value = +5.0 ];
+[ value = -5.0 ];
+[ value = "The next six examples should yeild errors" ];
+[ value = ~5.0 ];
+[ value = !5.0 ];
+[ value = +"abc" ];
+[ value = -"abc" ];
+[ value = ~"abc" ];
+[ value = !"abc" ];
+
+[ value = "ARITHMETIC OPERATORS" ];
+[ value = 17+3 ];
+[ value = 17-3 ];
+[ value = 17*3 ];
+[ value = 17/3 ];
+[ value = 17%3 ];
+[ value = 17.0+3 ];
+[ value = 17.0-3 ];
+[ value = 17.0*3 ];
+[ value = 17.0/3 ];
+[ value = 17.0%3 ];
+[ value = 17.0%1.5 ];
+
+[ value = 12 & 10 ];
+[ value = 12 | 10 ];
+[ value = 12 ^ 10 ];
+
+[ value = "SHIFT OPERATORS" ];
+[ value = 19 << 1 ];
+[ value = 19 >> 1 ];
+[ value = 19 >>> 1 ];
+[ value = -19 << 1 ];
+[ value = -19 >> 1 ];
+[ value = -19 >>> 1 ];
+[ value = "shift operations only work on integers" ];
+[ value = 19 << 1.0 ];
+[ value = 19.0 << 1 ];
+
+[ value = "COMPARISON OPERATORS" ];
+[ value = 3 < 5 ];
+[ value = 3 <= 5 ];
+[ value = 3 > 5 ];
+[ value = 3 >= 5 ];
+[ value = 3 == 5 ];
+[ value = 3 != 5 ];
+
+[ value = 3 < 3 ];
+[ value = 3 <= 3 ];
+[ value = 3 > 3 ];
+[ value = 3 >= 3 ];
+[ value = 3 == 3 ];
+[ value = 3 != 3 ];
+
+[ value = 3.0 < 3 ];
+[ value = 3.0 <= 3 ];
+[ value = 3.1 < 4 ];
+[ value = 3 < 3.1 ];
+
+[ value = "abc" < "abd" ];
+[ value = "abc" <= "abd" ];
+[ value = "abc" > "abd" ];
+[ value = "abc" >= "abd" ];
+[ value = "abc" == "abd" ];
+[ value = "abc" != "abd" ];
+
+[ value = "abc" < "abc" ];
+[ value = "abc" <= "abc" ];
+[ value = "abc" > "abc" ];
+[ value = "abc" >= "abc" ];
+[ value = "abc" == "abc" ];
+[ value = "abc" != "abc" ];
+
+[ value = true == false ];
+[ value = true != false ];
+[ value = true == true ];
+[ value = true != true ];
+
+[ value = "== and != are case-insensitive on strings" ];
+[ value = "abc" == "ABC" ];
+[ value = "abc" != "ABC" ];
+
+[ value = "3" == 3 ];
+[ value = 3 == "3" ];
+[ value = 1/0 ];
+[ value = ERROR IS 1/0 ];
+[ value = ERROR IS 1/1 ];
+[ value = 1/0 IS ERROR ];
+[ value = 1/1 IS ERROR ];
+
+[ value = x ];
+[ value = undefined IS x ];
+[ value = x IS undefined ];
+
+[ value = "values of distinct types never compare equal with 'IS'"];
+[ value = 1 IS 1.1 ];
+[ value = 1.1 IS 1.1 ];
+[ value = "case is significant in 'IS' comparisons" ];
+[ value = "abc" IS "abc" ];
+[ value = "abc" ISNT "abc" ];
+[ value = "ABC" is "abc" ];
+[ value = "ABC" isnt "abc" ];
+
+[ value = "BOOLEAN OPERATORS" ];
+[ value = false && false ];
+[ value = false && true ];
+[ value = true && false ];
+[ value = true && true ];
+[ value = false || false ];
+[ value = false || true ];
+[ value = true || false ];
+[ value = true || true ];
+
+[ value = "Boolean operations are done left to right" ];
+[ x = 0; value = x==0 || 1/x > 100 ];
+[ x = 0; value = x > 0 && 1/x < 100 ];
+[ x = true; value = x || y ];
+[ x = false; value = x && y ];
+[ value = "Boolean operations are strict wrt ERROR" ];
+[ x = 0; value = 1/x > 100 || x==0 ];
+[ x = 0; value = 1/x < 100 && x > 0 ];
+[ value = "Boolean operations are monotonic wrt UNDEFINED" ];
+[ x = 3; value = y==3 || x==3 ];
+[ x = 3; value = y!=3 && x!=3 ];
+
+[ value = "VARIABLES" ];
+
+{[ value = other.x; x = "A.x"], [x = other.x]};
+{[ value = other.x; x = other.x], [x = other.x]};
+{[ value = other.x || true; x = other.x], [x = other.x]};
+{[ value = true || other.x; x = other.x], [x = other.x]};
+{[ value = other.RunTime; Memory = 64 ],
+    [ Memory = 128; RunTime = self.Memory/other.Memory ]};
+
+[ value = "COMPLEX SYNTAX" ];
+
+[ value = 0 + 1 + 2 + 3 + 4; comment = "0 + 1 + 2 + 3 + 4" ];
+[ value = 0 - 1 - 2 - 3 - 4; comment = "0 - 1 - 2 - 3 - 4" ];
+[ value = 0 + (1 + (2 + (3 + 4))); comment = "0 + (1 + (2 + (3 + 4)))" ];
+[ value = 0 - (1 - (2 - (3 - 4))); comment = "0 - (1 - (2 - (3 - 4)))" ];
+[ value = 1*2+3*4; comment = "1*2+3*4" ];
+[ value = 1*(2+3)*4; comment = "1*(2+3)*4" ];
+[ value = x&3<<2 == 12; x = 12; comment = "x&3<<2 == 12" ];
+[ value = (x&(3<<2)) == 12; x = 12; comment = "(x&(3<<2)) != 12" ];
+[ value = --3; comment = "--3" ];
+[ value = -+3; comment = "-+3" ];
+[ value = -2+3; comment = "-2+3" ];
+[ value = -(2+3); comment = "-(2+3)" ];
+[ value = true ? "good" : "bad" ];
+[ value = (true ? false : true) ? "bad" : "good" ];
+[ value = true ? false : true ? "bad" : "good" ];
+[ value =
+    true?2:false ? 1 ? 1 + 2 << 3 : 4 >> 2
+      : true ? "good" : 3 << 2*1 ];
+[ value = "The next two should be the same" ];
+[ value = true ? 2 :  3 ? 4 : 5  ];
+[ value = true ? 2 : (3 ? 4 : 5) ];
+[ value = (true ? true : 3) ? 4 : 5 ];
+[ value = "The next two should be the same" ];
+[ value = true ?  true ? 3 : 4  : 5 ];
+[ value = true ? (true ? 3 : 4) : 5 ];

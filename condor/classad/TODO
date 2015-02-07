@@ -1,0 +1,55 @@
+Known problems or open issues.
+
+1. Perhaps there should be a version of the package condor.classad that uses
+the JNI (Java Native Interface) and the standard Condor C++ classad library to
+parse, store, manipulate, and print classads.
+    Possible advantages:
+        Faster execution speed?
+        Only one copy of main "engine" code to maintain, hence,
+        Avoids subtle differences in syntax/semantics between C++ and Java
+            classads
+    Possible disadvantages/challenges:
+        Reconcile big differences between Java and C++ API's.
+        No longer "Write Once Run Anywhere (tm)".
+        Requires installation of C++ classad library and proper config
+            (LD_LIBRARY_PATH, etc.)
+
+2. The C++ implementation has additional builtin functions for sets (lists of
+number): sum, avg, min, max, anyCompare, allCompare.  These need to be
+documented in the refman and implemented in Java.  There are also a few
+other useful functions in C++ missing in Java and vice versa.
+
+3. The C++ implementation allows suffixes B, K, M, or G (for bytes, kilobytes,
+megabytes, and gigabytes, respectively) on integer constants.  Apparently,
+they are stored with the constant and printed back out again on unparsing.
+When a constant with a suffix is involved in arithmetic, it sees that it
+is converted to a real (double) and the suffix is treated like e0, e3, e6, or
+e9, respectively.  The exact details should be documented in the refman
+and implemented in the Java version.
+
+4. Track down and stamp out any other remaining differences between the Java
+and C++ implementations of ClassAds.  (Clearly, this overlaps with point 1).
+
+5. The tests in the test sub-directory need to be extended.  There should
+be some way to test error-handling in parsing.  The "acceptance test" should
+be more sophisticated than simply doing a diff on files.  In particular, some
+of the tests involve the current time, so there will always be some diffs.
+
+6. Parsing and unparsing "annotations" on ERROR and UNDEFINED values in the
+native syntax needs to be cleaned up.  I suggest builtin functions
+error(string) and undefined(string), which would be handled as pseudo-constants
+similar to relTime(string) and abstime(string).  In conjunction with this, the
+set of options in ClassAdWriter should probably be rethought.  Also, the method
+Expr.toString() should probably be redefined to a readable but parsable
+representation rather than the "canonical" representation.  Perhaps it should
+use ClassAdWriter internally, with some way of setting a "global" options
+argument.
+
+7. Should 'x' 'y' be treated like 'xy', in analogy with the compile-time
+concatenation of strings?
+
+8. The reference manual should be moved from this directory to a more central
+location, not part of the "src_java" source tree.  More generally, the
+Java and C++ source trees should be better integrated.
+
+$Id: TODO,v 1.7 2003/10/10 17:23:47 solomon Exp $

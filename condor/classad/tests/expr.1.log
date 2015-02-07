@@ -1,0 +1,851 @@
+A = [
+    comment = "answer should be 3";
+    value = 3
+]
+result = 3
+
+A = [
+    comment = "answer should be 3.1416";
+    value = 3.1416
+]
+result = 3.1416
+
+A = [
+    comment = "answer should be .001";
+    value = 0.001
+]
+result = 0.001
+
+A = [
+    comment = "answer should be .0001; note that we choose to use E notation";
+    value = 1.0E-4
+]
+result = 1.0E-4
+
+A = [
+    comment = "A string containing various special characters";
+    value = "newline=\n backslash=\\ tab=\t ctl-a=\001 quot \" apos ' lt <"
+]
+result = "newline=\n backslash=\\ tab=\t ctl-a=\001 quot \" apos ' lt <"
+
+A = [
+    comment = "A string containing various special characters in an expression";
+    value = "newline=\n backslash=\\ tab=\t ctl-a=\001 quot \" apos ' lt <"!=""
+]
+result = true
+
+A = [
+    comment = "Explicit UNDEFINED";
+    value = UNDEFINED()
+]
+result = UNDEFINED()
+
+A = [
+    comment = "Explicit ERROR";
+    value = ERROR()
+]
+result = ERROR()
+
+A = [
+    comment = "answer should be true";
+    value = true
+]
+result = true
+
+A = [
+    comment = "answer should be false";
+    value = false
+]
+result = false
+
+A = [
+    comment = "quoted attribute";
+    value = quoted;
+    quoted = "good"
+]
+result = "good"
+
+A = [
+    comment = "quoted attribute";
+    value = quoted;
+    quoted = "good"
+]
+result = "good"
+
+A = [
+    comment = "quoted attribute";
+    value = quoted;
+    quoted = "good"
+]
+result = "good"
+
+A = [
+    comment = "An attribute name containing various special characters";
+    value = 'apos \' quot " lt <';
+    'apos \' quot " lt <' = "good"
+]
+result = "good"
+
+A = [
+    value = "UNARY OPERATORS"
+]
+result = "UNARY OPERATORS"
+
+A = [
+    value = +5
+]
+result = 5
+
+A = [
+    value = -5
+]
+result = -5
+
+A = [
+    value = ~5
+]
+result = -6
+
+A = [
+    value = !true
+]
+result = false
+
+A = [
+    value = !false
+]
+result = true
+
+A = [
+    value = +5.0
+]
+result = 5.0
+
+A = [
+    value = -5.0
+]
+result = -5.0
+
+A = [
+    value = "The next six examples should yeild errors"
+]
+result = "The next six examples should yeild errors"
+
+A = [
+    value = ~5.0
+]
+result = ERROR(Unary ~ of real value)
+
+A = [
+    value = !5.0
+]
+result = ERROR(!: argument must be boolean)
+
+A = [
+    value = +"abc"
+]
+result = ERROR(Unary + of string value)
+
+A = [
+    value = -"abc"
+]
+result = ERROR(Unary - of string value)
+
+A = [
+    value = ~"abc"
+]
+result = ERROR(Unary ~ of string value)
+
+A = [
+    value = !"abc"
+]
+result = ERROR(!: argument must be boolean)
+
+A = [
+    value = "ARITHMETIC OPERATORS"
+]
+result = "ARITHMETIC OPERATORS"
+
+A = [
+    value = 17+3
+]
+result = 20
+
+A = [
+    value = 17-3
+]
+result = 14
+
+A = [
+    value = 17*3
+]
+result = 51
+
+A = [
+    value = 17/3
+]
+result = 5
+
+A = [
+    value = 17%3
+]
+result = 2
+
+A = [
+    value = 17.0+3
+]
+result = 20.0
+
+A = [
+    value = 17.0-3
+]
+result = 14.0
+
+A = [
+    value = 17.0*3
+]
+result = 51.0
+
+A = [
+    value = 17.0/3
+]
+result = 5.666666666666667
+
+A = [
+    value = 17.0%3
+]
+result = 2.0
+
+A = [
+    value = 17.0%1.5
+]
+result = 0.5
+
+A = [
+    value = 12&10
+]
+result = 8
+
+A = [
+    value = 12|10
+]
+result = 14
+
+A = [
+    value = 12^10
+]
+result = 6
+
+A = [
+    value = "SHIFT OPERATORS"
+]
+result = "SHIFT OPERATORS"
+
+A = [
+    value = 19<<1
+]
+result = 38
+
+A = [
+    value = 19>>1
+]
+result = 9
+
+A = [
+    value = 19>>>1
+]
+result = 9
+
+A = [
+    value = -19<<1
+]
+result = -38
+
+A = [
+    value = -19>>1
+]
+result = -10
+
+A = [
+    value = -19>>>1
+]
+result = 2147483638
+
+A = [
+    value = "shift operations only work on integers"
+]
+result = "shift operations only work on integers"
+
+A = [
+    value = 19<<1.0
+]
+result = ERROR(real 1.000000000000000E+00 in integer context)
+
+A = [
+    value = 19.0<<1
+]
+result = ERROR(real 1.900000000000000E+01 in integer context)
+
+A = [
+    value = "COMPARISON OPERATORS"
+]
+result = "COMPARISON OPERATORS"
+
+A = [
+    value = 3<5
+]
+result = true
+
+A = [
+    value = 3<=5
+]
+result = true
+
+A = [
+    value = 3>5
+]
+result = false
+
+A = [
+    value = 3>=5
+]
+result = false
+
+A = [
+    value = 3==5
+]
+result = false
+
+A = [
+    value = 3!=5
+]
+result = true
+
+A = [
+    value = 3<3
+]
+result = false
+
+A = [
+    value = 3<=3
+]
+result = true
+
+A = [
+    value = 3>3
+]
+result = false
+
+A = [
+    value = 3>=3
+]
+result = true
+
+A = [
+    value = 3==3
+]
+result = true
+
+A = [
+    value = 3!=3
+]
+result = false
+
+A = [
+    value = 3.0<3
+]
+result = false
+
+A = [
+    value = 3.0<=3
+]
+result = true
+
+A = [
+    value = 3.1<4
+]
+result = true
+
+A = [
+    value = 3<3.1
+]
+result = true
+
+A = [
+    value = "abc"<"abd"
+]
+result = true
+
+A = [
+    value = "abc"<="abd"
+]
+result = true
+
+A = [
+    value = "abc">"abd"
+]
+result = false
+
+A = [
+    value = "abc">="abd"
+]
+result = false
+
+A = [
+    value = "abc"=="abd"
+]
+result = false
+
+A = [
+    value = "abc"!="abd"
+]
+result = true
+
+A = [
+    value = "abc"<"abc"
+]
+result = false
+
+A = [
+    value = "abc"<="abc"
+]
+result = true
+
+A = [
+    value = "abc">"abc"
+]
+result = false
+
+A = [
+    value = "abc">="abc"
+]
+result = true
+
+A = [
+    value = "abc"=="abc"
+]
+result = true
+
+A = [
+    value = "abc"!="abc"
+]
+result = false
+
+A = [
+    value = true==false
+]
+result = false
+
+A = [
+    value = true!=false
+]
+result = true
+
+A = [
+    value = true==true
+]
+result = true
+
+A = [
+    value = true!=true
+]
+result = false
+
+A = [
+    value = "== and != are case-insensitive on strings"
+]
+result = "== and != are case-insensitive on strings"
+
+A = [
+    value = "abc"=="ABC"
+]
+result = true
+
+A = [
+    value = "abc"!="ABC"
+]
+result = false
+
+A = [
+    value = "3"==3
+]
+result = ERROR(integer 3 in string context)
+
+A = [
+    value = 3=="3"
+]
+result = ERROR(string "3" in real context)
+
+A = [
+    value = 1/0
+]
+result = ERROR(/ by zero)
+
+A = [
+    value = ERROR() is 1/0
+]
+result = true
+
+A = [
+    value = ERROR() is 1/1
+]
+result = false
+
+A = [
+    value = 1/0 is ERROR()
+]
+result = true
+
+A = [
+    value = 1/1 is ERROR()
+]
+result = false
+
+A = [
+    value = x
+]
+result = UNDEFINED(attribute x not found)
+
+A = [
+    value = UNDEFINED() is x
+]
+result = true
+
+A = [
+    value = x is UNDEFINED()
+]
+result = true
+
+A = [
+    value = "values of distinct types never compare equal with 'IS'"
+]
+result = "values of distinct types never compare equal with 'IS'"
+
+A = [
+    value = 1 is 1.1
+]
+result = false
+
+A = [
+    value = 1.1 is 1.1
+]
+result = true
+
+A = [
+    value = "case is significant in 'IS' comparisons"
+]
+result = "case is significant in 'IS' comparisons"
+
+A = [
+    value = "abc" is "abc"
+]
+result = true
+
+A = [
+    value = "abc" isnt "abc"
+]
+result = false
+
+A = [
+    value = "ABC" is "abc"
+]
+result = false
+
+A = [
+    value = "ABC" isnt "abc"
+]
+result = true
+
+A = [
+    value = "BOOLEAN OPERATORS"
+]
+result = "BOOLEAN OPERATORS"
+
+A = [
+    value = false&&false
+]
+result = false
+
+A = [
+    value = false&&true
+]
+result = false
+
+A = [
+    value = true&&false
+]
+result = false
+
+A = [
+    value = true&&true
+]
+result = true
+
+A = [
+    value = false||false
+]
+result = false
+
+A = [
+    value = false||true
+]
+result = true
+
+A = [
+    value = true||false
+]
+result = true
+
+A = [
+    value = true||true
+]
+result = true
+
+A = [
+    value = "Boolean operations are done left to right"
+]
+result = "Boolean operations are done left to right"
+
+A = [
+    x = 0;
+    value = x==0||1/x>100
+]
+result = true
+
+A = [
+    x = 0;
+    value = x>0&&1/x<100
+]
+result = false
+
+A = [
+    x = true;
+    value = x||y
+]
+result = true
+
+A = [
+    x = false;
+    value = x&&y
+]
+result = false
+
+A = [
+    value = "Boolean operations are strict wrt ERROR"
+]
+result = "Boolean operations are strict wrt ERROR"
+
+A = [
+    x = 0;
+    value = 1/x>100||x==0
+]
+result = ERROR(/ by zero)
+
+A = [
+    x = 0;
+    value = 1/x<100&&x>0
+]
+result = ERROR(/ by zero)
+
+A = [
+    value = "Boolean operations are monotonic wrt UNDEFINED"
+]
+result = "Boolean operations are monotonic wrt UNDEFINED"
+
+A = [
+    x = 3;
+    value = y==3||x==3
+]
+result = true
+
+A = [
+    x = 3;
+    value = y!=3&&x!=3
+]
+result = false
+
+A = [
+    value = "VARIABLES"
+]
+result = "VARIABLES"
+
+A = [
+    value = other.x;
+    x = "A.x"
+]
+B = [
+    x = other.x
+]
+result = "A.x"
+
+A = [
+    value = other.x;
+    x = other.x
+]
+B = [
+    x = other.x
+]
+result = UNDEFINED(Cyclic attribute definition)
+
+A = [
+    value = other.x||true;
+    x = other.x
+]
+B = [
+    x = other.x
+]
+result = true
+
+A = [
+    value = true||other.x;
+    x = other.x
+]
+B = [
+    x = other.x
+]
+result = true
+
+A = [
+    value = other.RunTime;
+    Memory = 64
+]
+B = [
+    Memory = 128;
+    RunTime = self.Memory/other.Memory
+]
+result = 2
+
+A = [
+    value = "COMPLEX SYNTAX"
+]
+result = "COMPLEX SYNTAX"
+
+A = [
+    value = 0+1+2+3+4;
+    comment = "0 + 1 + 2 + 3 + 4"
+]
+result = 10
+
+A = [
+    value = 0-1-2-3-4;
+    comment = "0 - 1 - 2 - 3 - 4"
+]
+result = -10
+
+A = [
+    value = 0+(1+(2+(3+4)));
+    comment = "0 + (1 + (2 + (3 + 4)))"
+]
+result = 10
+
+A = [
+    value = 0-(1-(2-(3-4)));
+    comment = "0 - (1 - (2 - (3 - 4)))"
+]
+result = 2
+
+A = [
+    value = 1*2+3*4;
+    comment = "1*2+3*4"
+]
+result = 14
+
+A = [
+    value = 1*(2+3)*4;
+    comment = "1*(2+3)*4"
+]
+result = 20
+
+A = [
+    value = x&3<<2==12;
+    x = 12;
+    comment = "x&3<<2 == 12"
+]
+result = ERROR(boolean true in integer context)
+
+A = [
+    value = (x&3<<2)==12;
+    x = 12;
+    comment = "(x&(3<<2)) != 12"
+]
+result = true
+
+A = [
+    value = --3;
+    comment = "--3"
+]
+result = 3
+
+A = [
+    value = -+3;
+    comment = "-+3"
+]
+result = -3
+
+A = [
+    value = -2+3;
+    comment = "-2+3"
+]
+result = 1
+
+A = [
+    value = -(2+3);
+    comment = "-(2+3)"
+]
+result = -5
+
+A = [
+    value = true?"good":"bad"
+]
+result = "good"
+
+A = [
+    value = (true?false:true)?"bad":"good"
+]
+result = "good"
+
+A = [
+    value = true?false:true?"bad":"good"
+]
+result = false
+
+A = [
+    value = true?2:false?1?1+2<<3:4>>2:true?"good":3<<2*1
+]
+result = 2
+
+A = [
+    value = "The next two should be the same"
+]
+result = "The next two should be the same"
+
+A = [
+    value = true?2:3?4:5
+]
+result = 2
+
+A = [
+    value = true?2:3?4:5
+]
+result = 2
+
+A = [
+    value = (true?true:3)?4:5
+]
+result = 4
+
+A = [
+    value = "The next two should be the same"
+]
+result = "The next two should be the same"
+
+A = [
+    value = true?true?3:4:5
+]
+result = 3
+
+A = [
+    value = true?true?3:4:5
+]
+result = 3
+

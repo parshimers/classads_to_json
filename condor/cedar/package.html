@@ -1,0 +1,87 @@
+<body>
+Classes to read and write binary data in a format compatible with the
+Condor Cedar C++ library.
+The API (application programming interface) is meant to be compatible with Java
+rules and conventions and as such is quite different fromt he Cedar API, but
+the format of data transmitted and received "over the wire" is compatible with
+the C++ verison, with the exception of floats and doubles (which are hopelessly
+broken in the C++ version).
+<p>
+In particular,
+<ul>
+<li>Floats and doubles are sent using the Java serialization, which means they
+are sent in their in-memory (IEEE 754) format, most significant byte (MSB)
+first, as four or eight bytes.
+<li>All other primitive types are converted to 8-byte long integers and sent in
+network byte order (big-endian; MSB first).  They are sign-extended on output
+and truncated on input.  In particular,
+<ul><li>booleans are sent as false = 0 and true = 1 and received as
+0 = false, non-zero = true.
+<li>characters are zero-extended to 64 bits on output and truncated to 16 bits
+on input.
+</ul>
+<li>Strings are sent by converting bytes using Java UTF-8 and then appending a
+zero byte.  They are received by scanning up to a zero byte and
+reversing the UTF-8 encoding.  In the particular case that the
+string has nothing but ASCII characaters (1..127), this is essentially
+the identity transformation (trailing zero added on output and stripped
+on input).  Note that Java UTF-8 has the property that the encoded
+stream does not contain null bytes.
+</ul>
+Applications are expected to use methods readUTF and writeUTF to transmit
+strings.  The methods {@link condor.cedar.CedarOutputStream#writeChars(String)}
+and {@link condor.cedar.CedarInputStream#readLine()} are provided for
+compatibility with the DataOutput and DataInput interfaces, but they are
+deprecated.
+<p>
+The encoded data stream is divided into "messages", which are further
+sub-divided in to "packets".  Message boundaries have end-to-end
+significance; packet boundaries are hidden in the implementation.
+No data element ever crosses a message boundary.
+<p>
+Each packet is preceded by a packet header:  A one-byte EOM
+(end-of-message) indicator (non-zero indicates that this is the last
+packet of a message) followed by a length as a network-byte-order 32
+bit unsigned integer. The length does not include the header itself,
+so a zero-length packet (one with no payload) has a length field
+containing 0.  Packet boundaries are totally transparent on input.
+<p>
+On output, a packet is flushed when a fixed-size buffer fills, or
+on a call to flush(), close(), or endOfMessage().  If the current
+output buffer is empty, flush() has no effect.  Message boundaries
+are indicated on output by the method
+<pre>
+    void endOfMessage()
+</pre>
+which forces out a packet with the EOM flag sent containing any
+buffered data.  Note that an EOM packet may be empty, but a non-EOM
+packet is never empty.  An implicit or explicit close implies an
+endOfMessage() if any data has been output since the last
+endOfMessage().
+<p>
+On input, the EOM "marker" acts like EOF:  An attempt to read past it
+throws an EOFException.  The method available() returns the number of
+unread bytes in the current input packet.  If the current packet has
+been totally consumed (or was empty) and has the EOM bit sent,
+available() returns zero.  If the current packet has been consumed but
+does not have EOM set, another packet is read, and available() returns
+the size of that packet (which will be non-zero unless it is an EOM
+packet).  Thus available() only returns zero when the end of a message
+is encountered.  The method
+<pre>
+    boolean nextMessage()
+</pre>
+skips past the end of the current message and positions the input
+stream to start reading the next message.  If EOF is reached (last
+message in the stream), nextMessage() return false (and any attempt to
+read will throw an EOFException).
+<p>
+This package does not yet have the counterpart of "safesocks".
+Cedar supports both "relisocks", which are implemented on top of
+TCP, and "safesocks", which are implemented on UDP.  With a safesock,
+each message is a single packet, which is a single UDP datagram.
+It is thus limited to the maxiumum datagram size, which is
+platform-dependent, but is generally a bit less that 64K.
+(As of 3/2000, this limitation has been lifted).
+@since
+</body>

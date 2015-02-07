@@ -1,0 +1,24 @@
+// Simple demo of some of the capabilities of CATest
+// $Id: batch_test,v 1.1 2004/01/19 13:59:42 solomon Exp $
+
+show xmlinput
+show format
+let x = [
+    A = 1;
+    b = 2]
+print $x
+// set format = ugly
+// print $x
+// set format = pretty
+// print $x
+// set format = xml
+// print $x
+// set format = compact
+let y = [B=2;a=1]
+print $y
+same $x,$y
+diff $x,$y
+let y = [B=3;a=1]
+print $y
+same $x,$y
+diff $x,$y

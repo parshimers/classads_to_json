@@ -1,0 +1,397 @@
+A = [
+    value = strcat("abc","def")
+]
+result = "abcdef"
+
+A = [
+    value = strcat("abc","DEF","ghi")
+]
+result = "abcDEFghi"
+
+A = [
+    value = strcat("abc")
+]
+result = "abc"
+
+A = [
+    value = strcat()
+]
+result = ""
+
+A = [
+    value = substr("123456789",3,4)
+]
+result = "4567"
+
+A = [
+    value = substr("123456789",3,1)
+]
+result = "4"
+
+A = [
+    value = substr("123456789",3,0)
+]
+result = ""
+
+A = [
+    value = substr("123456789",3,-3)
+]
+result = "456"
+
+A = [
+    value = substr("123456789",-4,2)
+]
+result = "67"
+
+A = [
+    value = substr("123456789",-4,-3)
+]
+result = "6"
+
+A = [
+    value = substr("123456789",3)
+]
+result = "456789"
+
+A = [
+    value = substr("123456789",0)
+]
+result = "123456789"
+
+A = [
+    value = substr("123456789",-3)
+]
+result = "789"
+
+A = [
+    value = substr("123456789",20)
+]
+result = ""
+
+A = [
+    value = substr("123456789",0,20)
+]
+result = "123456789"
+
+A = [
+    value = substr("123456789")
+]
+result = ERROR(wrong number of args to substr)
+
+A = [
+    value = substr("123456789",1,2,3)
+]
+result = ERROR(wrong number of args to substr)
+
+A = [
+    value = substr("123456789",1.0)
+]
+result = ERROR(substr: arg 2 must be int, not real)
+
+A = [
+    value = substr(1,2,3)
+]
+result = ERROR(substr: arg 1 must be string, not integer)
+
+A = [
+    value = strcmp("abc","abd")
+]
+result = -1
+
+A = [
+    value = strcmp("abc","abc")
+]
+result = 0
+
+A = [
+    value = strcmp("abd","abc")
+]
+result = 1
+
+A = [
+    value = strcmp("","abc")
+]
+result = -3
+
+A = [
+    value = strcmp("ABC","abc")
+]
+result = -32
+
+A = [
+    value = stricmp("abc","aBc")
+]
+result = 0
+
+A = [
+    value = stricmp("abc","aBc")
+]
+result = 0
+
+A = [
+    value = stricmp("ABc","aBc")
+]
+result = 0
+
+A = [
+    value = toupper("One Two Three")
+]
+result = "ONE TWO THREE"
+
+A = [
+    value = tolower("One Two Three")
+]
+result = "one two three"
+
+A = [
+    value = glob("abc","abc")
+]
+result = true
+
+A = [
+    value = glob("abd","abc")
+]
+result = false
+
+A = [
+    value = glob("ab","abc")
+]
+result = false
+
+A = [
+    value = glob("*","abc")
+]
+result = true
+
+A = [
+    value = glob("a?c","abc")
+]
+result = true
+
+A = [
+    value = glob("ab*?cd","abxyzcd")
+]
+result = true
+
+A = [
+    value = glob("ab*?cd","abxyzcde")
+]
+result = false
+
+A = [
+    value = glob("ab\\\\","ab\\")
+]
+result = true
+
+A = [
+    value = glob("ab\\*\\?\\\"\\\\cd","ab*?\"\\cd")
+]
+result = true
+
+A = [
+    comment = "pattern";
+    value = "ab\\*\\?\\\"\\\\cd"
+]
+result = "ab\\*\\?\\\"\\\\cd"
+
+A = [
+    comment = "subject string";
+    value = "ab*?\"\\cd"
+]
+result = "ab*?\"\\cd"
+
+A = [
+    value = glob("abc","aBc")
+]
+result = false
+
+A = [
+    value = glob("abc","aBc")
+]
+result = false
+
+A = [
+    value = glob("ABc","aBc")
+]
+result = false
+
+A = [
+    value = iglob("ab\\\\","ab\\")
+]
+result = true
+
+A = [
+    value = iglob("ab\\*\\?\\\"\\\\cd","ab*?\"\\cd")
+]
+result = true
+
+A = [
+    value = iglob("abc","aBc")
+]
+result = true
+
+A = [
+    value = iglob("abc","aBc")
+]
+result = true
+
+A = [
+    value = iglob("ABc","aBc")
+]
+result = false
+
+A = [
+    value = regexp("abc","abc")
+]
+result = true
+
+A = [
+    value = regexp("abc","xxxabcyyy")
+]
+result = true
+
+A = [
+    value = regexp("abd","abc")
+]
+result = false
+
+A = [
+    value = regexp("ab","abc")
+]
+result = true
+
+A = [
+    value = regexp("ab*c","abbbbc")
+]
+result = true
+
+A = [
+    value = regexp("ab*c","ac")
+]
+result = true
+
+A = [
+    value = regexp("ab+c","abbbbc")
+]
+result = true
+
+A = [
+    value = regexp("ab+c","ac")
+]
+result = false
+
+A = [
+    value = regexp("ab?c","abc")
+]
+result = true
+
+A = [
+    value = regexp("ab?c","ac")
+]
+result = true
+
+A = [
+    value = regexp("case","Case")
+]
+result = false
+
+A = [
+    value = regexp("case","Case","i")
+]
+result = true
+
+A = [
+    value = regexp("case","Case","?")
+]
+result = false
+
+A = [
+    value = regexp("^start","start\ncontinue","")
+]
+result = true
+
+A = [
+    value = regexp("^continue","start\ncontinue","")
+]
+result = false
+
+A = [
+    value = regexp("^continue","start\ncontinue","m")
+]
+result = true
+
+A = [
+    value = regexp("t.c","start\ncontinue")
+]
+result = false
+
+A = [
+    value = regexp("t.c","start\ncontinue","s")
+]
+result = true
+
+A = [
+    value = regexp("t.c","start\ncontinue","s")
+]
+result = true
+
+A = [
+    value = regexp("a b c","abc")
+]
+result = false
+
+A = [
+    value = regexp("a b c","abc","x")
+]
+result = true
+
+A = [
+    value = regexp("st    # start\n.*    # middle\ncon   # end","start\ncontinue","s")
+]
+result = false
+
+A = [
+    value = regexp("st    # start\n.*    # middle\ncon   # end","start\ncontinue","sx")
+]
+result = true
+
+A = [
+    value = regexp("1")
+]
+result = ERROR(wrong number of args to regexp)
+
+A = [
+    value = regexp("1","2","3","4")
+]
+result = ERROR(wrong number of args to regexp)
+
+A = [
+    value = regexp(1,"1")
+]
+result = ERROR(regexp: arg 1 must be string, not integer)
+
+A = [
+    value = regexp("1",1)
+]
+result = ERROR(regexp: arg 2 must be string, not integer)
+
+A = [
+    value = regexp("(","abc")
+]
+result = ERROR(regexp: bad pattern '(': Unclosed group near index 1)
+
+A = [
+    value = strcat("<<<",123,">>>")
+]
+result = "<<<123>>>"
+
+A = [
+    value = strcat("<<<",true,">>>")
+]
+result = "<<<true>>>"
+
+A = [
+    value = strcat("<<<",3.1415926535,">>>")
+]
+result = "<<<3.141592653500000E+00>>>"
+

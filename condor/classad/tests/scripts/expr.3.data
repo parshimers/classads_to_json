@@ -1,0 +1,928 @@
+A = [
+    value = int()
+]
+result = ERROR(wrong number of args to int)
+
+A = [
+    value = int(1,2)
+]
+result = ERROR(wrong number of args to int)
+
+A = [
+    value = int(47)
+]
+result = 47
+
+A = [
+    value = int(47.0)
+]
+result = 47
+
+A = [
+    value = int(47.123)
+]
+result = 47
+
+A = [
+    value = int(47.5)
+]
+result = 47
+
+A = [
+    value = int(47.9)
+]
+result = 47
+
+A = [
+    value = int(-47.123)
+]
+result = -47
+
+A = [
+    value = int(-47.5)
+]
+result = -47
+
+A = [
+    value = int(-47.9)
+]
+result = -47
+
+A = [
+    value = int("47")
+]
+result = 47
+
+A = [
+    value = int("47.123")
+]
+result = 47
+
+A = [
+    value = int(true)
+]
+result = 1
+
+A = [
+    value = int(false)
+]
+result = 0
+
+A = [
+    value = int("47.0x")
+]
+result = ERROR(ill-formed integer 47.0x)
+
+A = [
+    value = isUndefined()
+]
+result = ERROR(wrong number of args to isUndefined)
+
+A = [
+    value = isUndefined(UNDEFINED())
+]
+result = true
+
+A = [
+    value = isUndefined(ERROR())
+]
+result = false
+
+A = [
+    value = isUndefined("hello")
+]
+result = false
+
+A = [
+    value = isUndefined(123)
+]
+result = false
+
+A = [
+    value = isUndefined(123.0)
+]
+result = false
+
+A = [
+    value = isUndefined({
+        1,
+        2,
+        3
+    })
+]
+result = false
+
+A = [
+    value = isUndefined([
+        x = 1
+    ])
+]
+result = false
+
+A = [
+    value = isUndefined(absTime())
+]
+result = false
+
+A = [
+    value = isUndefined(relTime(0))
+]
+result = false
+
+A = [
+    value = isError()
+]
+result = ERROR(wrong number of args to isError)
+
+A = [
+    value = isError(UNDEFINED())
+]
+result = false
+
+A = [
+    value = isError(ERROR())
+]
+result = true
+
+A = [
+    value = isError("hello")
+]
+result = false
+
+A = [
+    value = isError(123)
+]
+result = false
+
+A = [
+    value = isError(123.0)
+]
+result = false
+
+A = [
+    value = isError({
+        1,
+        2,
+        3
+    })
+]
+result = false
+
+A = [
+    value = isError([
+        x = 1
+    ])
+]
+result = false
+
+A = [
+    value = isError(absTime())
+]
+result = false
+
+A = [
+    value = isError(relTime(0))
+]
+result = false
+
+A = [
+    value = isString()
+]
+result = ERROR(wrong number of args to isString)
+
+A = [
+    value = isString(UNDEFINED())
+]
+result = false
+
+A = [
+    value = isString(ERROR())
+]
+result = false
+
+A = [
+    value = isString("hello")
+]
+result = true
+
+A = [
+    value = isString(123)
+]
+result = false
+
+A = [
+    value = isString(123.0)
+]
+result = false
+
+A = [
+    value = isString({
+        1,
+        2,
+        3
+    })
+]
+result = false
+
+A = [
+    value = isString([
+        x = 1
+    ])
+]
+result = false
+
+A = [
+    value = isString(absTime())
+]
+result = false
+
+A = [
+    value = isString(relTime(0))
+]
+result = false
+
+A = [
+    value = isInteger()
+]
+result = ERROR(wrong number of args to isInteger)
+
+A = [
+    value = isInteger(UNDEFINED())
+]
+result = false
+
+A = [
+    value = isInteger(ERROR())
+]
+result = false
+
+A = [
+    value = isInteger("hello")
+]
+result = false
+
+A = [
+    value = isInteger(123)
+]
+result = true
+
+A = [
+    value = isInteger(123.0)
+]
+result = false
+
+A = [
+    value = isInteger({
+        1,
+        2,
+        3
+    })
+]
+result = false
+
+A = [
+    value = isInteger([
+        x = 1
+    ])
+]
+result = false
+
+A = [
+    value = isInteger(absTime())
+]
+result = false
+
+A = [
+    value = isInteger(relTime(0))
+]
+result = false
+
+A = [
+    value = isReal()
+]
+result = ERROR(wrong number of args to isReal)
+
+A = [
+    value = isReal(UNDEFINED())
+]
+result = false
+
+A = [
+    value = isReal(ERROR())
+]
+result = false
+
+A = [
+    value = isReal("hello")
+]
+result = false
+
+A = [
+    value = isReal(123)
+]
+result = false
+
+A = [
+    value = isReal(123.0)
+]
+result = true
+
+A = [
+    value = isReal({
+        1,
+        2,
+        3
+    })
+]
+result = false
+
+A = [
+    value = isReal([
+        x = 1
+    ])
+]
+result = false
+
+A = [
+    value = isReal(absTime())
+]
+result = false
+
+A = [
+    value = isReal(relTime(0))
+]
+result = false
+
+A = [
+    value = isList()
+]
+result = ERROR(wrong number of args to isList)
+
+A = [
+    value = isList(UNDEFINED())
+]
+result = false
+
+A = [
+    value = isList(ERROR())
+]
+result = false
+
+A = [
+    value = isList("hello")
+]
+result = false
+
+A = [
+    value = isList(123)
+]
+result = false
+
+A = [
+    value = isList(123.0)
+]
+result = false
+
+A = [
+    value = isList({
+        1,
+        2,
+        3
+    })
+]
+result = true
+
+A = [
+    value = isList([
+        x = 1
+    ])
+]
+result = false
+
+A = [
+    value = isList(absTime())
+]
+result = false
+
+A = [
+    value = isList(relTime(0))
+]
+result = false
+
+A = [
+    value = isClassad()
+]
+result = ERROR(wrong number of args to isClassad)
+
+A = [
+    value = isClassad(UNDEFINED())
+]
+result = false
+
+A = [
+    value = isClassad(ERROR())
+]
+result = false
+
+A = [
+    value = isClassad("hello")
+]
+result = false
+
+A = [
+    value = isClassad(123)
+]
+result = false
+
+A = [
+    value = isClassad(123.0)
+]
+result = false
+
+A = [
+    value = isClassad({
+        1,
+        2,
+        3
+    })
+]
+result = false
+
+A = [
+    value = isClassad([
+        x = 1
+    ])
+]
+result = true
+
+A = [
+    value = isClassad(absTime())
+]
+result = false
+
+A = [
+    value = isClassad(relTime(0))
+]
+result = false
+
+A = [
+    value = isBoolean()
+]
+result = ERROR(wrong number of args to isBoolean)
+
+A = [
+    value = isBoolean(UNDEFINED())
+]
+result = false
+
+A = [
+    value = isBoolean(ERROR())
+]
+result = false
+
+A = [
+    value = isBoolean("hello")
+]
+result = false
+
+A = [
+    value = isBoolean(123)
+]
+result = false
+
+A = [
+    value = isBoolean(123.0)
+]
+result = false
+
+A = [
+    value = isBoolean({
+        1,
+        2,
+        3
+    })
+]
+result = false
+
+A = [
+    value = isBoolean([
+        x = 1
+    ])
+]
+result = false
+
+A = [
+    value = isBoolean(absTime())
+]
+result = false
+
+A = [
+    value = isBoolean(relTime(0))
+]
+result = false
+
+A = [
+    value = isAbstime()
+]
+result = ERROR(wrong number of args to isAbstime)
+
+A = [
+    value = isAbstime(UNDEFINED())
+]
+result = false
+
+A = [
+    value = isAbstime(ERROR())
+]
+result = false
+
+A = [
+    value = isAbstime("hello")
+]
+result = false
+
+A = [
+    value = isAbstime(123)
+]
+result = false
+
+A = [
+    value = isAbstime(123.0)
+]
+result = false
+
+A = [
+    value = isAbstime({
+        1,
+        2,
+        3
+    })
+]
+result = false
+
+A = [
+    value = isAbstime([
+        x = 1
+    ])
+]
+result = false
+
+A = [
+    value = isAbstime(absTime())
+]
+result = true
+
+A = [
+    value = isAbstime(relTime(0))
+]
+result = false
+
+A = [
+    value = isReltime()
+]
+result = ERROR(wrong number of args to isReltime)
+
+A = [
+    value = isReltime(UNDEFINED())
+]
+result = false
+
+A = [
+    value = isReltime(ERROR())
+]
+result = false
+
+A = [
+    value = isReltime("hello")
+]
+result = false
+
+A = [
+    value = isReltime(123)
+]
+result = false
+
+A = [
+    value = isReltime(123.0)
+]
+result = false
+
+A = [
+    value = isReltime({
+        1,
+        2,
+        3
+    })
+]
+result = false
+
+A = [
+    value = isReltime([
+        x = 1
+    ])
+]
+result = false
+
+A = [
+    value = isReltime(absTime())
+]
+result = false
+
+A = [
+    value = isReltime(relTime(0))
+]
+result = true
+
+A = [
+    value = real()
+]
+result = ERROR(wrong number of args to real)
+
+A = [
+    value = real(1,2)
+]
+result = ERROR(wrong number of args to real)
+
+A = [
+    value = real(47)
+]
+result = 47.0
+
+A = [
+    value = real(47.123)
+]
+result = 47.123
+
+A = [
+    value = real(-47.123)
+]
+result = -47.123
+
+A = [
+    value = real("47")
+]
+result = 47.0
+
+A = [
+    value = real("47.123")
+]
+result = 47.123
+
+A = [
+    value = real(true)
+]
+result = 1.0
+
+A = [
+    value = real(false)
+]
+result = 0.0
+
+A = [
+    value = real("47.0x")
+]
+result = ERROR(ill-formed real 47.0x)
+
+A = [
+    value = string()
+]
+result = ERROR(wrong number of args to string)
+
+A = [
+    value = string(1,2)
+]
+result = ERROR(wrong number of args to string)
+
+A = [
+    value = string(47)
+]
+result = "47"
+
+A = [
+    value = string(47.123)
+]
+result = "4.712300000000000E+01"
+
+A = [
+    value = string(-47.123)
+]
+result = "-4.712300000000000E+01"
+
+A = [
+    value = string("47")
+]
+result = "47"
+
+A = [
+    value = string("47.123")
+]
+result = "47.123"
+
+A = [
+    value = string(1.1)
+]
+result = "1.100000000000000E+00"
+
+A = [
+    value = string(1.23456789E9)
+]
+result = "1.234567890000000E+09"
+
+A = [
+    value = string(1.23456789E-6)
+]
+result = "1.234567890000000E-06"
+
+A = [
+    value = string(true)
+]
+result = "true"
+
+A = [
+    value = string(false)
+]
+result = "false"
+
+A = [
+    value = string("good")
+]
+result = "good"
+
+A = [
+    value = floor()
+]
+result = ERROR(wrong number of args to floor)
+
+A = [
+    value = floor(1,2)
+]
+result = ERROR(wrong number of args to floor)
+
+A = [
+    value = floor(47)
+]
+result = 47
+
+A = [
+    value = floor(47.0)
+]
+result = 47
+
+A = [
+    value = floor(47.123)
+]
+result = 47
+
+A = [
+    value = floor(47.5)
+]
+result = 47
+
+A = [
+    value = floor(47.9)
+]
+result = 47
+
+A = [
+    value = floor(-47.123)
+]
+result = -48
+
+A = [
+    value = floor(-47.5)
+]
+result = -48
+
+A = [
+    value = floor(-47.9)
+]
+result = -48
+
+A = [
+    value = ceiling()
+]
+result = ERROR(wrong number of args to ceiling)
+
+A = [
+    value = ceiling(1,2)
+]
+result = ERROR(wrong number of args to ceiling)
+
+A = [
+    value = ceiling(47)
+]
+result = 47
+
+A = [
+    value = ceiling(47.0)
+]
+result = 47
+
+A = [
+    value = ceiling(47.123)
+]
+result = 48
+
+A = [
+    value = ceiling(47.5)
+]
+result = 48
+
+A = [
+    value = ceiling(47.9)
+]
+result = 48
+
+A = [
+    value = ceiling(-47.123)
+]
+result = -47
+
+A = [
+    value = ceiling(-47.5)
+]
+result = -47
+
+A = [
+    value = ceiling(-47.9)
+]
+result = -47
+
+A = [
+    value = round()
+]
+result = ERROR(wrong number of args to round)
+
+A = [
+    value = round(1,2)
+]
+result = ERROR(wrong number of args to round)
+
+A = [
+    value = round(47)
+]
+result = 47
+
+A = [
+    value = round(47.0)
+]
+result = 47
+
+A = [
+    value = round(47.123)
+]
+result = 47
+
+A = [
+    value = round(47.5)
+]
+result = 48
+
+A = [
+    value = round(47.9)
+]
+result = 48
+
+A = [
+    value = round(-47.123)
+]
+result = -47
+
+A = [
+    value = round(-47.5)
+]
+result = -47
+
+A = [
+    value = round(-47.9)
+]
+result = -48
+
+A = [
+    value = isinteger(x)&&x>=0&&x<100;
+    x = random(100)
+]
+result = true
+
+A = [
+    value = isreal(x)&&x>=0&&x<10.0;
+    x = random(10.0)
+]
+result = true
+
+A = [
+    value = isreal(x)&&x>=0&&x<1.0;
+    x = random()
+]
+result = true
+
+A = [
+    value = random(0)
+]
+result = ERROR(non-positive argument to random())
+
+A = [
+    value = random(-1.0)
+]
+result = ERROR(non-positive argument to random())
+

@@ -1,0 +1,17 @@
+"hello";
+[ a = 1; b = "hello"; c = false; d = e; f = 123.456; g = 123e-10; ];
+{ one, two, three, four };
+1+2+3+4+-5;
+[ x = 'it\'s a \3 "quoted" name';
+    'it\'s a \3 "quoted" name' = "it's a \12 \"quoted\" string"; ];
+[ x = 'it\'s a \3 "quoted" name';
+    'it\'s a \3 "quoted" name' = "it's a \3 \"quoted\" string"; ].x;
+[ a = 1; 'two words' = 2; 'it\'s "yes"' = 3; 'a<b' = 4 ];
+    // <c>
+    //  <a n="a"><n>1</n></a>
+    //  <a n="two words"><n>2</n></a>
+    //  <a n="it's &quot;yes&quot;"><n>3</n></a>
+    //  <a n="a&lt;b"><n>4</n></a>
+    // </c>
+[ a = 1; 'two words' = 2; 'it\'s "yes"' = 3; 'a<b' = 4 ].a;
+    // <e>[a=1;'two words'=2;'it\'s&quot;yes&quot;'=3;'a<b'=4].a</e>

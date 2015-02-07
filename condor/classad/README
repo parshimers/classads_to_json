@@ -1,0 +1,58 @@
+$Id: README,v 1.6 2004/12/12 19:56:54 solomon Exp $
+
+Java implementation of Condor "Classified Advertisements".  Written by Marvin
+Solomon, University of Wisconsin--Madision, August 1997.
+Updated August 1998, July 1999, January 2003.
+
+Based on earlier design: "Classified Advertisements: Official Specification
+Version Alpha" by Rajesh Raman, Miron Livny, James Pruyne, and Wieru Cai, April
+28, 1997.  Most of the functionality is contained in the package condor.classad.
+
+This software is is released under the CONDOR (r) PUBLIC LICENSE open-source
+license.  See ../../LICENSE.TXT.
+
+For more information, see the ClassAd web site: 
+
+  http://www.cs.wisc.edu/condor/classad
+
+To conform to Java package-naming conventions, this directory should end with
+.../condor/classad.
+
+See also ../../README.
+
+README      This file
+Makefile    Main targets are
+    all:    Compiles all the sources and builds classad.jar.
+    refman: Formats the reference manual (requires latex and dvips).
+    clean:  Cleans up.
+    distclean:  Also removes byacc-generated stuff.
+classes.make
+            List of all classes, for including in Makefile and in
+            ../Makefile (which builds a jar file from them)
+classad.y   Specification of the classad language grammar.  Processed by 
+            byacc (see ../../byacc) to produce Parser.java.
+genfunc.pl  Ad hoc Perl script to create FuncCall.java from FuncCall.src.
+package.html
+            Some general documentation about the condor.classad package, meant
+            to be processed along with *.java to create full documentation for
+            this package.
+refman.tex  The classad language reference manual (not completely up-to-date).
+
+AttrRef.java
+ClassAdParser.java
+ClassAdReader.java
+CondExpr.java
+Constant.java
+Context.java
+Expr.java
+FuncCall.src
+GetOpt.java
+ListExpr.java
+Op.java
+Query.java
+RecordExpr.java
+SelectExpr.java
+SubscriptExpr.java
+            The remaining source files of the package (FuncCall.src is
+            processed by genfunc.pl to create FuncCall.java).  See the javadoc
+            documentation for more information.

@@ -1,0 +1,177 @@
+$Id: Changelog,v 1.2 2005/01/08 17:14:39 solomon Exp $
+
+This software is is released under the CONDOR (r) PUBLIC LICENSE open-source
+license.  See ../../LICENSE.TXT.
+
+Changes from release 2.1 to 2.2 of the Java classad implementation.
+
+* Bug fixes
+    - ClassAdSAXHandler.getResult()
+        pop result off the stack rather than leaving it there
+    - Fixed handling various mixtures of UNDEFINED and ERROR arguments to
+        strict builtin functions
+    - Fixed handling of BOOL==BOOL or BOOL!=BOOL
+    - Fixed recognition of reserved words.  Previous code had a bug in which
+        "is_foo" was recognized as the reserved word "is"
+    - Fixed typo in pattern for relative time constants in the XML schema
+* New methods
+    Expr.sameAs(Expr)
+    ClassAdParser.curLine() ClassAdParser.curColumn()
+    ClassAdWriter.setRepresentation(int)
+    ClassAdWriter.getRepresentation()
+    Constant.equals(Object) and Constant.hashCode() so that Constants can be
+        stored in hash tables
+* New/changed builtin functions in classads
+    new
+        member identicalMember
+        isUndefined isError isString isInteger isReal isList isClassad
+        isBoolean isAbstime isReltime
+        random toupper tolower regex splitTime
+        formatTime
+    renamed
+        unixTime to time
+        timeInterval to interval
+    deleted
+        gmtTime
+    deprecated
+        gmtTimeString localTimeString glob iglob
+    added tests to for the new/changed functions
+* Added facilities for non-strict functions (necessary for isError and
+    isUndefined)
+* Clarified copyright:  everything is covered by the Condor Public License.
+* Misc improvement of comments, javadoc, code organization, etc.
+
+Details by file:
+
+AttrName.java
+    unchanged
+AttrRef.java
+    new method sameAs
+Builtin.java
+    import regex
+    change header comment
+    rearranged methods to match refman
+    new builtin functions
+        member identicalMember
+        isUndefined isError isString isInteger isReal isList isClassad
+        isBoolean isAbstime isReltime
+        random toupper tolower regex splitTime
+        formatTime
+    renamed functions
+        unixTime to time
+        timeInterval to interval
+    deleted function gmtTime
+    replaced Constant.TYPE (for various values of TYPE) with Expr.TYPE.
+        These constants are defined in Expr and inherited by Constant.  To
+        write (e.g.) Constant.LIST is misleading.
+ClassAd.java
+    fix comments for bind, eval, match, loadJavaLibrary
+ClassAdParser.java
+    new methods curLine and curColumn
+ClassAdReader.java
+    unchanged
+ClassAdSAXHandler.java
+    fixed method getResult to use pop rather than peek. Otherwise, this handler
+        is not reusable
+ClassAdWriter.java
+    rearranged members
+    added better comments to delimit sections
+    new methods setRepresentation and getRepresentation to
+        allow a writer to switch dynamically between XML and native outout
+    added support for non-strict functions
+CondExpr.java
+    new method sameAs
+Constant.java
+    new method sameAs
+    fixed documentation of method getInstance(boolean)
+    override methods equals() and hashCode() so that Constants can be stored in
+        hash tables
+Env.java
+    move nested class Env to top level (Env.java)
+Expr.java
+    move nested class Env to top level (Env.java)
+    new method sameAs
+    rearranged order of code to improve readability
+    added support for non-strict functions
+FuncCall.java
+    fixed handling of case where some args are UNDEFINED and some are ERROR
+    added cross-reference to ClassAd.loadJavaLibary
+    added support for non-strict functions
+        store args as a List rather than Expr[]
+    improved comments to explain how varargs works
+    new method sameAs
+GetOpt.java
+    unchanged
+ListExpr.java
+    new method sameAs
+Op.java
+    fixed handling of BOOL==BOOL or BOOL!=BOOL
+    new method sameAs
+    use a switch statement rather than nested ifs to improve readability
+    added support for non-strict functions
+Query.java
+    unchanged
+README
+    fix copyright (Condor Public License rather than LGPL)
+RecordExpr.java
+    new method sameAs
+SelectExpr.java
+    new method sameAs
+SubscriptExpr.java
+    new method sameAs
+classad.y
+    fixed recognition of reserved words.  Previous code had a bug in which
+        "is_foo" was recognized as the reserved word "is"
+    new methods curLine and curColumn
+    added support for non-strict functions
+        store function args as a List rather than Expr[]
+classads.dtd
+    unchanged
+classads.xsd
+    fixed typo in pattern for relative time constants
+classes.make
+    move nested class Env to top level (Env.java)
+package.html
+    update version and date
+refman.tex
+    removed builtin functions glob and iglob
+    added builtin functions
+        member, identicalMember
+        isUndefined, isInteger, etc.
+        splittime, formatTime, random, regexp
+    clarified representation of absolute times.
+    clarified strictness in functions. The is* functions are not strict.
+    clarified that toupper and tolower convert their arguments to strings
+        first
+    consistently use capitalized names Integer, Real, etc. for types of ClassAd
+        expressions.
+Makefile
+    fix copyright
+analysis/tests
+    fix copyright
+tests/CATest.java
+    new tester program
+tests/Makefile
+    new program CATest
+    new var MAIN_CLASS
+    new targets demo.jar, clean, interactive, batch
+    fixed tests so that diffs run clean rather than with 4 "expected" diffs
+tests/batch_test
+    add a simple test to demonstrate how CATest works.  Use it in the "batch:"
+        makefile target
+tests/classes.make
+    added CATest.java
+tests/scripts/expr.1.{test,data}
+    added tests for BOOL==BOOL and BOOL!=BOOL
+tests/scripts/expr.2.{test,data}
+    added tests for toupper, tolower, regex
+tests/scripts/expr.3.{test,data}
+    added tests for isUndefined, isError, isString, isInteger, etc.
+    added tests for random
+tests/scripts/expr.4.{test,data}
+    rename unixTime to time, timeInterval to interval
+    new tests for formatTime
+    add "VARIABLE" string to tests that vary from run to run (e.g. use random
+        or current time) so that diff can ignore them.
+tests/scripts/expr.5.{test,data}
+    new tests for member, identicalMember

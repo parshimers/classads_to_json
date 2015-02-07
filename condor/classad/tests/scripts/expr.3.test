@@ -1,0 +1,192 @@
+// Various tests to verify the evaluation of expressions, part 3:
+//    Built-in functions for type conversion and numerical operations.
+
+[ value = int() ];
+[ value = int(1,2) ];
+[ value = int(47) ];
+[ value = int(47.0) ];
+[ value = int(47.123) ];
+[ value = int(47.500) ];
+[ value = int(47.900) ];
+[ value = int(-47.123) ];
+[ value = int(-47.500) ];
+[ value = int(-47.900) ];
+[ value = int("47") ];
+[ value = int("47.123") ];
+[ value = int(true) ];
+[ value = int(false) ];
+[ value = int("47.0x") ];
+
+[ value = isUndefined() ];
+[ value = isUndefined(undefined) ];
+[ value = isUndefined(error) ];
+[ value = isUndefined("hello") ];
+[ value = isUndefined(123) ];
+[ value = isUndefined(123.0) ];
+[ value = isUndefined({1,2,3}) ];
+[ value = isUndefined([x = 1]) ];
+[ value = isUndefined(absTime()) ];
+[ value = isUndefined(relTime(0)) ];
+
+[ value = isError() ];
+[ value = isError(undefined) ];
+[ value = isError(error) ];
+[ value = isError("hello") ];
+[ value = isError(123) ];
+[ value = isError(123.0) ];
+[ value = isError({1,2,3}) ];
+[ value = isError([x = 1]) ];
+[ value = isError(absTime()) ];
+[ value = isError(relTime(0)) ];
+
+[ value = isString() ];
+[ value = isString(undefined) ];
+[ value = isString(error) ];
+[ value = isString("hello") ];
+[ value = isString(123) ];
+[ value = isString(123.0) ];
+[ value = isString({1,2,3}) ];
+[ value = isString([x = 1]) ];
+[ value = isString(absTime()) ];
+[ value = isString(relTime(0)) ];
+
+[ value = isInteger() ];
+[ value = isInteger(undefined) ];
+[ value = isInteger(error) ];
+[ value = isInteger("hello") ];
+[ value = isInteger(123) ];
+[ value = isInteger(123.0) ];
+[ value = isInteger({1,2,3}) ];
+[ value = isInteger([x = 1]) ];
+[ value = isInteger(absTime()) ];
+[ value = isInteger(relTime(0)) ];
+
+[ value = isReal() ];
+[ value = isReal(undefined) ];
+[ value = isReal(error) ];
+[ value = isReal("hello") ];
+[ value = isReal(123) ];
+[ value = isReal(123.0) ];
+[ value = isReal({1,2,3}) ];
+[ value = isReal([x = 1]) ];
+[ value = isReal(absTime()) ];
+[ value = isReal(relTime(0)) ];
+
+[ value = isList() ];
+[ value = isList(undefined) ];
+[ value = isList(error) ];
+[ value = isList("hello") ];
+[ value = isList(123) ];
+[ value = isList(123.0) ];
+[ value = isList({1,2,3}) ];
+[ value = isList([x = 1]) ];
+[ value = isList(absTime()) ];
+[ value = isList(relTime(0)) ];
+
+[ value = isClassad() ];
+[ value = isClassad(undefined) ];
+[ value = isClassad(error) ];
+[ value = isClassad("hello") ];
+[ value = isClassad(123) ];
+[ value = isClassad(123.0) ];
+[ value = isClassad({1,2,3}) ];
+[ value = isClassad([x = 1]) ];
+[ value = isClassad(absTime()) ];
+[ value = isClassad(relTime(0)) ];
+
+[ value = isBoolean() ];
+[ value = isBoolean(undefined) ];
+[ value = isBoolean(error) ];
+[ value = isBoolean("hello") ];
+[ value = isBoolean(123) ];
+[ value = isBoolean(123.0) ];
+[ value = isBoolean({1,2,3}) ];
+[ value = isBoolean([x = 1]) ];
+[ value = isBoolean(absTime()) ];
+[ value = isBoolean(relTime(0)) ];
+
+[ value = isAbstime() ];
+[ value = isAbstime(undefined) ];
+[ value = isAbstime(error) ];
+[ value = isAbstime("hello") ];
+[ value = isAbstime(123) ];
+[ value = isAbstime(123.0) ];
+[ value = isAbstime({1,2,3}) ];
+[ value = isAbstime([x = 1]) ];
+[ value = isAbstime(absTime()) ];
+[ value = isAbstime(relTime(0)) ];
+
+[ value = isReltime() ];
+[ value = isReltime(undefined) ];
+[ value = isReltime(error) ];
+[ value = isReltime("hello") ];
+[ value = isReltime(123) ];
+[ value = isReltime(123.0) ];
+[ value = isReltime({1,2,3}) ];
+[ value = isReltime([x = 1]) ];
+[ value = isReltime(absTime()) ];
+[ value = isReltime(relTime(0)) ];
+
+[ value = real() ];
+[ value = real(1,2) ];
+[ value = real(47) ];
+[ value = real(47.123) ];
+[ value = real(-47.123) ];
+[ value = real("47") ];
+[ value = real("47.123") ];
+[ value = real(true) ];
+[ value = real(false) ];
+[ value = real("47.0x") ];
+
+[ value = string() ];
+[ value = string(1,2) ];
+[ value = string(47) ];
+[ value = string(47.123) ];
+[ value = string(-47.123) ];
+[ value = string("47") ];
+[ value = string("47.123") ];
+[ value = string(1.1) ];
+[ value = string(1234567890.0) ];
+[ value = string(.0000012345678900) ];
+[ value = string(true) ];
+[ value = string(false) ];
+[ value = string("good") ];
+
+[ value = floor() ];
+[ value = floor(1,2) ];
+[ value = floor(47) ];
+[ value = floor(47.0) ];
+[ value = floor(47.123) ];
+[ value = floor(47.500) ];
+[ value = floor(47.900) ];
+[ value = floor(-47.123) ];
+[ value = floor(-47.500) ];
+[ value = floor(-47.900) ];
+
+[ value = ceiling() ];
+[ value = ceiling(1,2) ];
+[ value = ceiling(47) ];
+[ value = ceiling(47.0) ];
+[ value = ceiling(47.123) ];
+[ value = ceiling(47.500) ];
+[ value = ceiling(47.900) ];
+[ value = ceiling(-47.123) ];
+[ value = ceiling(-47.500) ];
+[ value = ceiling(-47.900) ];
+
+[ value = round() ];
+[ value = round(1,2) ];
+[ value = round(47) ];
+[ value = round(47.0) ];
+[ value = round(47.123) ];
+[ value = round(47.500) ];
+[ value = round(47.900) ];
+[ value = round(-47.123) ];
+[ value = round(-47.500) ];
+[ value = round(-47.900) ];
+
+[ value = isinteger(x) && x >= 0 && x < 100; x = random(100)  ];
+[ value = isreal(x) && x >= 0 && x < 10.0; x = random(10.0) ];
+[ value = isreal(x) && x >= 0 && x < 1.0; x = random() ];
+[ value = random(0) ];
+[ value = random(-1.0) ];

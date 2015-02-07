@@ -1,0 +1,22 @@
+import condor.cedar.CedarInputStream;
+import condor.cedar.CedarOutputStream;
+import java.io.*;
+
+class Test2 {
+    public static void pl(Object o) { System.err.println(o); }
+    public static void main(String[] args) throws Exception {
+        CedarOutputStream out = new CedarOutputStream(
+            new FileOutputStream("data"), 36);
+        long pattern = 0x0123456789abcd00L;
+        for (int i=0; i<9; i++) {
+            out.writeLong(pattern + i);
+        }
+        out.close();
+        CedarInputStream in = new CedarInputStream(
+            new FileInputStream("data"));
+        for (int i=0; i<9; i++) {
+            pl(Long.toHexString(in.readLong()));
+        }
+        in.close();
+    }
+}

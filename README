@@ -1,0 +1,149 @@
+$Id: README,v 1.11 2005/05/07 13:32:25 solomon Exp $
+
+Root directory for Condor software and Condor-related software written in Java.
+
+This software is is released under the Condor open source license.
+See LICENSE.TXT.
+
+For more information, see the ClassAd web site:
+    
+    http://www.cs.wisc.edu/condor/classad
+
+Currently, the packages provided are
+    condor.cedar          Filter streams for reading and writing binary data in
+                          a format compatible with the C++ Cedar library of
+                          Condor (Java Classes CedarInputStream and
+                          CedarOutputStream corresponding to the C++ class
+                          ReliSock).
+    condor.classad        The Classified Advertisement language.
+    condor.classad.tests  Test programs for condor.classad.
+    condor.logview        GUI for looking at Condor log files
+    condor.classadView    GUI for browsing sets of classads.
+    condor.classad.analysis
+                          Program for analyzing the results of matchmaking in
+                          Condor.
+    condor.classad.analysis.tests 
+                          Test programs for condor.classad.analysis.
+
+According to Java naming conventions, the sources are in sub-directories
+condor/cedar, condor/classad, etc.
+
+README      This file
+LICENSE.TXT The terms under which this software is distributed.
+Makefile    See also the Makefiles in the sub-directories.
+config.make A configuration file meant to be included by Makefiles in the
+            condor subtree.
+condor/     Subtree containing sources for the condor.* packages.
+byacc/      A version of Berkeley yacc (byacc) modified to support Java
+            parsers.  Used by condor/classad to create a parser for classified
+            ads.
+
+The main Makefile targets in this directory are
+    jar:        build .jar files for all the packages (default)
+    all:        compile all the .class files
+    clean:      remove generated files not included in the distribution
+    distclean:  like clean but also removes certain files that can be built
+                from others, such as the output of byacc and the PostScript and
+                PDF versions of the reference manual
+    test:       run tests in all subdirectories that have them
+Each of these calls "make xxx" in all subdirectories.
+In addition
+    javadoc:    makes the .html documentation for all the packages
+
+See the extensive comments in config.make for more details.
+
+BUILDING THE SOFTWARE
+
+For the impatient:
+
+    # optional
+        echo 'JAVAC = jikes' > local.make
+        echo 'JAVA_HOME = /path/to/java/1.4/sdk' >> local.make
+    make
+    make test
+    make javadoc
+
+This software requires Java 1.4 and GNU make.  It is known not to work
+(yet) with Java 1.5.
+
+If you do "make distclean", you will also need perl and a C compiler.
+
+Details:
+
+The default configuration assume that your path includes "java" and "javac"
+commands compatible with JDK 1.4.
+
+You may wish to use the "jikes" java compiler available from
+
+    http://jikes.sourceforge.net/
+
+instead of javac.  It's 10-20 times as fast as javac, gives better error
+messages, and arguably adheres more closely to the Java language standard.
+To use jikes, create a file named local.make in the directory containing this
+README and add the line
+
+    JAVAC = /path/to/jikes
+
+or simply
+
+    JAVAC = /path/to/jikes
+
+if jikes is in your path.  Jikes needs to know the location of your JDK
+libraries.  (Javac also needs to know the location, but it assumes they are in
+a fixed location relative to javac itself).  If the 1.4 "java" command
+is in your path, the script find_java_home.sh uses it to figure out the
+location of the libraries.   If that doesn't work for some reason or you wish
+to override the default location of the libraries, add to local.make the line
+    
+    JAVA_HOME = /path/to/java/1.4/sdk
+
+where "/path/to/java/1.4/sdk" is replaced by the location of the Java
+installation on your machine.  The indicated directory should contain the
+following files, among others.
+
+    bin/java
+    jre/lib/rt.jar
+
+The file Parser.java in the condor/classad directory is built from classad.y in
+that directory with the tool byacc included here.  If you type "make distclean"
+or otherwise remove Parser.java or modify classad.y, you will need a C
+compiler to build byacc.  The default "make" target should take care of
+that automatically.
+
+Similarly, FuncCall.java in condor/classad is created by perl from FuncCall.src
+in that directory.  If you "make distclean", remove FuncCall.java, or modify
+FuncCall.src, you will need a copy of perl.  If perl is not in your path,
+add the line
+
+    PERL = /path/to/perl
+
+to local.make.
+
+After setting up local.make, type
+
+    make
+
+In this directory.  Note that the Makefiles use features of GNU make.
+Other versions of make are unlikely to work.
+The net result is the file
+
+    condor/classad/classad.jar
+
+To use this file, write a Java program that uses the package java.classad
+and compile and run it with classad.jar in your CLASSPATH.
+
+The command
+    
+    make test
+
+runs a variety of regression tests.  The make will abort if any of the tests
+fail.
+
+The command
+
+    make javadoc
+
+creates the subdirectory doc and fills it with html documentation about the
+Java API.  Point your browser at
+
+    doc/index.html

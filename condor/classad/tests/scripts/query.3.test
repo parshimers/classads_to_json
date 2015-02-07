@@ -1,0 +1,3 @@
+select Name, Memory, Arch, OpSys, Disk
+	from ads_raw
+	where Memory > 800

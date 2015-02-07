@@ -1,0 +1,101 @@
+// Various tests to verify the evaluation of expressions, part 2:
+//    Built-in functions on strings.
+
+[ value = strcat("abc","def") ];
+[ value = strcat("abc","DEF","ghi") ];
+[ value = strcat("abc") ];
+[ value = strcat() ];
+
+[ value = substr("123456789",3,4) ];
+[ value = substr("123456789",3,1) ];
+[ value = substr("123456789",3,0) ];
+[ value = substr("123456789",3,-3) ];
+[ value = substr("123456789",-4,2) ];
+[ value = substr("123456789",-4,-3) ];
+[ value = substr("123456789",3) ];
+[ value = substr("123456789",0) ];
+[ value = substr("123456789",-3) ];
+[ value = substr("123456789",20) ];
+[ value = substr("123456789",0,20) ];
+// Error cases
+[ value = substr("123456789") ];
+[ value = substr("123456789",1,2,3) ];
+[ value = substr("123456789",1.0) ];
+[ value = substr(1,2,3) ];
+
+[ value = strcmp("abc", "abd") ];
+[ value = strcmp("abc", "abc") ];
+[ value = strcmp("abd", "abc") ];
+[ value = strcmp("", "abc") ];
+[ value = strcmp("ABC", "abc") ];
+
+[ value = stricmp("abc","aBc") ];
+[ value = stricmp("abc","aBc") ];
+[ value = stricmp("ABc","aBc") ];
+[ value = toupper("One Two Three") ];
+[ value = tolower("One Two Three") ];
+
+[ value = glob("abc", "abc") ];
+[ value = glob("abd", "abc") ];
+[ value = glob("ab", "abc") ];
+[ value = glob("*", "abc") ];
+[ value = glob("a?c", "abc") ];
+[ value = glob("ab*?cd", "abxyzcd") ];
+[ value = glob("ab*?cd", "abxyzcde") ];
+
+// Tests with escapes.  Note that each pair of backslashes gives rise to
+// just one backslash in the pattern or subject string.  Thus the
+// next test tests pattern ab\\ against subject ab\.
+[ value = glob("ab\\\\", "ab\\") ];
+[ value = glob("ab\\*\\?\\\"\\\\cd", "ab*?\"\\cd") ];
+[ comment = "pattern"; value = "ab\\*\\?\\\"\\\\cd" ];
+[ comment = "subject string"; value = "ab*?\"\\cd" ];
+
+[ value = glob("abc","aBc") ];
+[ value = glob("abc","aBc") ];
+[ value = glob("ABc","aBc") ];
+
+[ value = iglob("ab\\\\", "ab\\") ];
+[ value = iglob("ab\\*\\?\\\"\\\\cd", "ab*?\"\\cd") ];
+[ value = iglob("abc","aBc") ];
+[ value = iglob("abc","aBc") ];
+[ value = iglob("ABc","aBc") ];
+
+[ value = regexp("abc", "abc") ];
+[ value = regexp("abc", "xxxabcyyy") ];
+[ value = regexp("abd", "abc") ];
+[ value = regexp("ab", "abc") ];
+[ value = regexp("ab*c", "abbbbc") ];
+[ value = regexp("ab*c", "ac") ];
+[ value = regexp("ab+c", "abbbbc") ];
+[ value = regexp("ab+c", "ac") ];
+[ value = regexp("ab?c", "abc") ];
+[ value = regexp("ab?c", "ac") ];
+[ value = regexp("case", "Case") ];
+[ value = regexp("case", "Case", "i") ];
+[ value = regexp("case", "Case", "?") ];
+[ value = regexp("^start", "start\ncontinue", ""); ];
+[ value = regexp("^continue", "start\ncontinue", ""); ];
+[ value = regexp("^continue", "start\ncontinue", "m"); ];
+[ value = regexp("t.c", "start\ncontinue"); ];
+[ value = regexp("t.c", "start\ncontinue", "s"); ];
+[ value = regexp("t.c", "start\ncontinue", "s"); ];
+[ value = regexp("a b c", "abc") ];
+[ value = regexp("a b c", "abc", "x") ];
+[ value = regexp("st    # start\n"
+                ".*    # middle\n"
+                "con   # end", "start\ncontinue", "s"); ];
+[ value = regexp("st    # start\n"
+                ".*    # middle\n"
+                "con   # end",
+                    "start\ncontinue", "sx"); ];
+[ value = regexp("1"); ];
+[ value = regexp("1", "2", "3", "4"); ];
+[ value = regexp(1, "1"); ];
+[ value = regexp("1", 1); ];
+[ value = regexp("(", "abc"); ];
+
+// Automatic conversion to strings
+[ value = strcat("<<<",123,">>>") ];
+[ value = strcat("<<<",true,">>>") ];
+[ value = strcat("<<<",31415926535e-10,">>>") ];

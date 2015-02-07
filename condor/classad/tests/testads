@@ -1,0 +1,5 @@
+[MyType="mytype";param1=1;param2="two";TargetType="targettype"];
+[MyType="mytype";param2="two";TargetType="targettype"];
+[MyType="mytype";TargetType="targettype"];
+// Next test should fail:  no "MyType" attribute
+// [TargetType="targettype"];

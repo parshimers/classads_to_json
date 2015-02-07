@@ -1,0 +1,5 @@
+This is a verion of byacc (Berkeley YACC) hacked by Marvin Solomon
+(solomon@cs.wisc.edu) to support Java.  It is inspired by, but not derived
+from, a similar hack by Bob Jaimeson.  See also ACKNOWLEDGEMENTS.
+Its main use in Condor is to generate a parser for Classified Advertisements.
+See ../condor/classad.
