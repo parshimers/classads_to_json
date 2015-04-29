@@ -184,7 +184,7 @@ endif
 # NB: As of Java 1.2, $(JAVALIB) need not be explicitly mentioned for javac,
 # although it does no harm to add it here.  It is included here because jikes
 # requires it, if you use $(JAVAC) = jikes.
-CPFLAG := -classpath $(JAVALIB):$(TOP)
+CPFLAG := -classpath $(JAVALIB):$(TOP):/home/parshimers/Work/java_classad.2.2/json.jar
 
 ifneq ($(JLIBS),)
 CPFLAG := $(CPFLAG):$(JLIBS)

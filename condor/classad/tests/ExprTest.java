@@ -19,6 +19,8 @@ package condor.classad.tests;
 import condor.classad.*;
 import java.io.*;
 import java.util.*;
+import org.json.*;
+import java.sql.Timestamp;
 
 /** Main program to test evaluation of expressions.
  * Input consists of a sequence of expressions, each followed by a semicolon.
@@ -192,43 +194,78 @@ public class ExprTest {
     } // run(String[]);
 
     private void eval(Expr expr) {
-        if (expr.type == Expr.LIST) {
-            ListExpr l = (ListExpr)expr;
-            if (l.size() != 2) {
-                out.println("Bad arg '" + expr + "':");
-                out.println("List with " + l.size()
-                    + " elements (should be 2)");
-                return;
+        RecordExpr rexpr = (RecordExpr) expr;
+        JSONObject o = new JSONObject();
+
+        for(Iterator<AttrName> i = rexpr.attributes(); i.hasNext();){
+            AttrName attr = i.next();
+            //out.println(attr.toString() + rexpr.lookup(attr).toString());
+            Expr val = rexpr.lookup(attr);
+            if(!val.isConstant()){
+            //cast non-constant expressions to strings. dont worry about nested records.
+                o.put(attr.toString(), val.toString().replace("\"",""));
             }
-            Expr e1 = l.sub(0);
-            Expr e2 = l.sub(1);
-            out.print("A = ");
-            out.println(e1);
-            out.print("B = ");
-            out.println(e2);
-            if (e1.type != Expr.RECORD || e2.type != Expr.RECORD) {
-                out.println("Bad arg '" + expr + "':");
-                out.println("Non-ClassAd in list");
-                return;
+            //assume lists are only of simple types
+            else if (val instanceof ListExpr){
+                ListExpr lsVal = (ListExpr) val;
+                for(Iterator<Constant> j = lsVal.iterator(); j.hasNext();){
+                    accumulatetIntoJSON(o,attr,j.next());
+                }
             }
-            Expr val = ClassAd.eval("value", (RecordExpr)e1, (RecordExpr)e2);
-            out.print("result = ");
-            out.println(val);
-            out.println();
-        } else if (expr.type == Expr.RECORD) {
-            out.print("A = ");
-            out.println(expr);
-            Expr val = ClassAd.eval((RecordExpr)expr, new String[] {"value"});
-            out.print("result = ");
-            out.println(val);
-            out.println();
-        } else {
-            out.print("A = ");
-            out.println(expr);
-            Expr val = expr.eval();
-            out.print("result = ");
-            out.println(val);
-            out.println();
+            else{
+                insertIntoJSON(o,attr,((Constant) val));
+            }
+
         }
+        out.print(o);
+        out.println();
     } // eval(Expr)
+    private void insertIntoJSON(JSONObject o, AttrName attr, Constant c){
+        //i really don't like this...
+        if(c.value instanceof Integer){
+            o.put(attr.toString(),(Integer)c.value);
+        }
+        else if(c.value instanceof Double){
+            o.put(attr.toString(), (Double)c.value);
+        }
+        else if(c.value instanceof String){
+            o.put(attr.toString(), (String)c.value);
+        }
+        else if(c.value instanceof Long){
+            //time
+            o.put(attr.toString(), (Long)c.value);
+        }
+        else if(c.value instanceof Timestamp){
+        //timestamp
+            o.put(attr.toString(), ((Timestamp)c.value).getTime());
+        }
+        else {
+            //boolean
+            o.put(attr.toString(), c.isTrue());
+        }
+    }
+    private void accumulatetIntoJSON(JSONObject o, AttrName attr, Constant c){
+        //i really don't like this...
+        if(c.value instanceof Integer){
+            o.accumulate(attr.toString(),(Integer)c.value);
+        }
+        else if(c.value instanceof Double){
+            o.accumulate(attr.toString(), (Double)c.value);
+        }
+        else if(c.value instanceof String){
+            o.accumulate(attr.toString(), (String)c.value);
+        }
+        else if(c.value instanceof Long){
+            //time
+            o.accumulate(attr.toString(), (Long)c.value);
+        }
+        else if(c.value instanceof Timestamp){
+        //timestamp
+            o.accumulate(attr.toString(), ((Timestamp)c.value).getTime());
+        }
+        else {
+            //boolean
+            o.accumulate(attr.toString(), c.isTrue());
+        }
+    }
 } // class ExprTest
